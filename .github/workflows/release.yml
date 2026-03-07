@@ -42,3 +42,17 @@ jobs:
           tag_name: "v${{ inputs.version }}"
           name: "v${{ inputs.version }}"
           generate_release_notes: true
+          append_body: true
+          body: |
+
+            ## Install
+
+            ```bash
+            npm install -g @vdhsn/harmonica@${{ inputs.version }}
+            # or
+            pnpm install -g @vdhsn/harmonica@${{ inputs.version }}
+            # or run without installing
+            bunx @vdhsn/harmonica@${{ inputs.version }}
+            ```
+
+            [View on npm](https://www.npmjs.com/package/@vdhsn/harmonica/v/${{ inputs.version }})
