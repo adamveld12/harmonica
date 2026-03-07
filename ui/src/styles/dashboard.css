@@ -1,15 +1,52 @@
-* { box-sizing: border-box; }
-body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #e0e0e0; margin: 0; }
-h1 { color: #7c3aed; margin-top: 0; }
-h2 { color: #a78bfa; border-bottom: 1px solid #333; padding-bottom: 4px; }
-table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
-td { border: 1px solid #333; padding: 0; }
-tr:nth-child(even) { background: #1f1f1f; }
-.empty { color: #666; font-style: italic; padding: 8px 12px; }
-.meta { color: #888; margin-bottom: 20px; }
-.connected { color: #86efac; }
-.disconnected { color: #f87171; }
-details { width: 100%; }
+* {
+  box-sizing: border-box;
+}
+body {
+  font-family: monospace;
+  padding: 20px;
+  background: #1a1a1a;
+  color: #e0e0e0;
+  margin: 0;
+}
+h1 {
+  color: #7c3aed;
+  margin-top: 0;
+}
+h2 {
+  color: #a78bfa;
+  border-bottom: 1px solid #333;
+  padding-bottom: 4px;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 20px;
+}
+td {
+  border: 1px solid #333;
+  padding: 0;
+}
+tr:nth-child(even) {
+  background: #1f1f1f;
+}
+.empty {
+  color: #666;
+  font-style: italic;
+  padding: 8px 12px;
+}
+.meta {
+  color: #888;
+  margin-bottom: 20px;
+}
+.connected {
+  color: #86efac;
+}
+.disconnected {
+  color: #f87171;
+}
+details {
+  width: 100%;
+}
 summary {
   padding: 8px 12px;
   cursor: pointer;
@@ -19,13 +56,33 @@ summary {
   gap: 12px;
   user-select: none;
 }
-summary::-webkit-details-marker { display: none; }
-summary::before { content: ">"; font-size: 0.85em; color: #a78bfa; flex-shrink: 0; }
-details[open] > summary::before { content: "v"; }
-summary:hover { background: #252525; }
-.issue-link { color: #c4b5fd; text-decoration: none; font-weight: bold; }
-.issue-link:hover { text-decoration: underline; }
-.row-meta { color: #888; font-size: 0.85em; }
+summary::-webkit-details-marker {
+  display: none;
+}
+summary::before {
+  content: ">";
+  font-size: 0.85em;
+  color: #a78bfa;
+  flex-shrink: 0;
+}
+details[open] > summary::before {
+  content: "v";
+}
+summary:hover {
+  background: #252525;
+}
+.issue-link {
+  color: #c4b5fd;
+  text-decoration: none;
+  font-weight: bold;
+}
+.issue-link:hover {
+  text-decoration: underline;
+}
+.row-meta {
+  color: #888;
+  font-size: 0.85em;
+}
 .details-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -35,8 +92,13 @@ summary:hover { background: #252525; }
   border-top: 1px solid #2a2a2a;
   font-size: 0.85em;
 }
-.details-grid div { color: #bbb; word-break: break-all; }
-.details-grid strong { color: #a78bfa; }
+.details-grid div {
+  color: #bbb;
+  word-break: break-all;
+}
+.details-grid strong {
+  color: #a78bfa;
+}
 .config-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -48,8 +110,12 @@ summary:hover { background: #252525; }
   font-size: 0.85em;
   margin-bottom: 20px;
 }
-.config-grid div { color: #bbb; }
-.config-grid strong { color: #a78bfa; }
+.config-grid div {
+  color: #bbb;
+}
+.config-grid strong {
+  color: #a78bfa;
+}
 .output-log {
   background: #0d0d0d;
   border-top: 1px solid #222;
@@ -60,28 +126,90 @@ summary:hover { background: #252525; }
   font-size: 0.82em;
   font-family: monospace;
 }
-.output-line { margin: 1px 0; white-space: pre-wrap; word-break: break-all; }
-.output-line-text { color: #e0e0e0; }
-.output-line-tool_use { color: #60a5fa; }
-.output-line-tool_result { color: #86efac; }
-.output-line-error { color: #f87171; }
-.output-line-info { color: #a78bfa; }
-.exit-completed { color: #86efac; }
-.exit-error { color: #f87171; }
-.exit-stalled { color: #fbbf24; }
-.exit-max_turns { color: #fbbf24; }
-.exit-terminal { color: #94a3b8; }
-.exit-aborted { color: #94a3b8; }
-.settings-panel { margin-bottom: 20px; }
-.settings-panel > summary { background: #161616; border: 1px solid #2a2a2a; border-radius: 4px; }
-.settings-panel[open] > summary { border-bottom: none; border-radius: 4px 4px 0 0; }
-.settings-panel > .config-grid { border-top: none; border-radius: 0 0 4px 4px; }
-.config-sections { background: #161616; border: 1px solid #2a2a2a; border-top: none; border-radius: 0 0 4px 4px; padding: 4px 0 8px; }
-.config-sections > .config-grid { border: none; border-radius: 0; margin-bottom: 0; }
-.config-section-header { color: #a78bfa; font-size: 0.8em; margin: 8px 0 4px 12px; font-weight: normal; }
-.toggle-label { cursor: pointer; color: #bbb; }
-.toggle-label input[type="checkbox"] { accent-color: #7c3aed; cursor: pointer; }
-.toggle-label input[type="checkbox"]:disabled { cursor: not-allowed; opacity: 0.4; }
+.output-line {
+  margin: 1px 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.output-line-text {
+  color: #e0e0e0;
+}
+.output-line-tool_use {
+  color: #60a5fa;
+}
+.output-line-tool_result {
+  color: #86efac;
+}
+.output-line-error {
+  color: #f87171;
+}
+.output-line-info {
+  color: #a78bfa;
+}
+.exit-completed {
+  color: #86efac;
+}
+.exit-error {
+  color: #f87171;
+}
+.exit-stalled {
+  color: #fbbf24;
+}
+.exit-max_turns {
+  color: #fbbf24;
+}
+.exit-terminal {
+  color: #94a3b8;
+}
+.exit-aborted {
+  color: #94a3b8;
+}
+.settings-panel {
+  margin-bottom: 20px;
+}
+.settings-panel > summary {
+  background: #161616;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+}
+.settings-panel[open] > summary {
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+}
+.settings-panel > .config-grid {
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+}
+.config-sections {
+  background: #161616;
+  border: 1px solid #2a2a2a;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  padding: 4px 0 8px;
+}
+.config-sections > .config-grid {
+  border: none;
+  border-radius: 0;
+  margin-bottom: 0;
+}
+.config-section-header {
+  color: #a78bfa;
+  font-size: 0.8em;
+  margin: 8px 0 4px 12px;
+  font-weight: normal;
+}
+.toggle-label {
+  cursor: pointer;
+  color: #bbb;
+}
+.toggle-label input[type="checkbox"] {
+  accent-color: #7c3aed;
+  cursor: pointer;
+}
+.toggle-label input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
 .perm-btn {
   margin-left: 8px;
   padding: 2px 8px;
@@ -93,7 +221,9 @@ summary:hover { background: #252525; }
   font-family: monospace;
   font-size: 0.85em;
 }
-.perm-btn:hover { background: #4c2a8a; }
+.perm-btn:hover {
+  background: #4c2a8a;
+}
 .stop-btn {
   margin-left: 4px;
   padding: 1px 6px;
@@ -105,9 +235,16 @@ summary:hover { background: #252525; }
   font-family: monospace;
   font-size: 0.85em;
 }
-.stop-btn:hover { background: #7f1d1d; }
-.pr-link { color: #60a5fa; text-decoration: none; }
-.pr-link:hover { text-decoration: underline; }
+.stop-btn:hover {
+  background: #7f1d1d;
+}
+.pr-link {
+  color: #60a5fa;
+  text-decoration: none;
+}
+.pr-link:hover {
+  text-decoration: underline;
+}
 .tab-bar {
   display: flex;
   flex-wrap: wrap;
@@ -130,22 +267,52 @@ summary:hover { background: #252525; }
   gap: 6px;
   transition: background 0.1s;
 }
-.tab:hover { background: #252525; color: #e0e0e0; }
-.tab-active { background: #252525; border-bottom-color: #252525; color: #c4b5fd; border-color: #7c3aed; }
-.tab-content { }
+.tab:hover {
+  background: #252525;
+  color: #e0e0e0;
+}
+.tab-active {
+  background: #252525;
+  border-bottom-color: #252525;
+  color: #c4b5fd;
+  border-color: #7c3aed;
+}
+.tab-content {
+}
 .badge {
   font-size: 0.75em;
   padding: 1px 6px;
   border-radius: 10px;
   font-weight: bold;
 }
-.badge-ok { background: #14532d; color: #86efac; }
-.badge-retry { background: #451a03; color: #fbbf24; }
-.badge-idle { background: #1e1e2e; color: #666; }
-.badge-pending { background: #1e293b; color: #94a3b8; }
-.workflow-header { margin-bottom: 16px; }
-.workflow-header h2 { margin-top: 0; margin-bottom: 4px; }
-.workflow-description { color: #888; margin: 0 0 12px; font-size: 0.9em; }
+.badge-ok {
+  background: #14532d;
+  color: #86efac;
+}
+.badge-retry {
+  background: #451a03;
+  color: #fbbf24;
+}
+.badge-idle {
+  background: #1e1e2e;
+  color: #666;
+}
+.badge-pending {
+  background: #1e293b;
+  color: #94a3b8;
+}
+.workflow-header {
+  margin-bottom: 16px;
+}
+.workflow-header h2 {
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+.workflow-description {
+  color: #888;
+  margin: 0 0 12px;
+  font-size: 0.9em;
+}
 .perm-hint {
   font-size: 0.85em;
   color: #f5a623;

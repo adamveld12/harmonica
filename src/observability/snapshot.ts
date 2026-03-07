@@ -1,10 +1,8 @@
-import type {
-  OrchestratorState, StateSnapshot, RunningSnapshot, RetrySnapshot, PendingSnapshot
-} from "../types.ts";
+import type { OrchestratorState, StateSnapshot, RunningSnapshot, RetrySnapshot, PendingSnapshot } from "../types.ts";
 import { getWorkItemAssigneeName, getWorkItemProjectName } from "../types.ts";
 
 export function buildSnapshot(state: OrchestratorState): StateSnapshot {
-  const running: RunningSnapshot[] = Array.from(state.running.values()).map(e => ({
+  const running: RunningSnapshot[] = Array.from(state.running.values()).map((e) => ({
     issueId: e.workItem.id,
     issueIdentifier: e.workItem.identifier,
     issueTitle: e.workItem.title,
@@ -23,7 +21,7 @@ export function buildSnapshot(state: OrchestratorState): StateSnapshot {
     prUrl: e.prUrl,
   }));
 
-  const retryQueue: RetrySnapshot[] = state.retryQueue.map(r => ({
+  const retryQueue: RetrySnapshot[] = state.retryQueue.map((r) => ({
     issueId: r.workItem.id,
     issueIdentifier: r.workItem.identifier,
     issueTitle: r.workItem.title,
@@ -39,7 +37,7 @@ export function buildSnapshot(state: OrchestratorState): StateSnapshot {
     reason: r.reason,
   }));
 
-  const pending: PendingSnapshot[] = (state.pending ?? []).map(item => ({
+  const pending: PendingSnapshot[] = (state.pending ?? []).map((item) => ({
     issueId: item.id,
     issueIdentifier: item.identifier,
     issueTitle: item.title,

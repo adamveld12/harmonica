@@ -19,7 +19,7 @@ export class SensorManager {
         logger.info("sensor starting", { name });
         await sensor.start();
         logger.info("sensor started", { name });
-      })
+      }),
     );
   }
 
@@ -32,7 +32,7 @@ export class SensorManager {
 
   getTracker(
     trackerConfig: TrackerConfig,
-    workflowId: string
+    workflowId: string,
   ): { tracker: TrackerClient; resolvedConfig: TrackerConfig } {
     const sensorName = trackerConfig.sensor;
     const sensor = this.sensors.get(sensorName);
@@ -78,9 +78,7 @@ export class SensorManager {
       if (!oldNames.has(name)) {
         const sensor = new LinearSensor(newConfig[name]);
         this.sensors.set(name, sensor);
-        sensor.start().catch((err) =>
-          logger.error("sensor start error", { name, error: String(err) })
-        );
+        sensor.start().catch((err) => logger.error("sensor start error", { name, error: String(err) }));
         logger.info("sensor added", { name });
       }
     }
@@ -95,9 +93,7 @@ export class SensorManager {
         existing.stop();
         const sensor = new LinearSensor(newCfg);
         this.sensors.set(name, sensor);
-        sensor.start().catch((err) =>
-          logger.error("sensor restart error", { name, error: String(err) })
-        );
+        sensor.start().catch((err) => logger.error("sensor restart error", { name, error: String(err) }));
         logger.info("sensor restarted", { name });
       }
     }

@@ -36,21 +36,29 @@ export function startDashboardServer(
     const data = JSON.stringify({ workflows });
     const msg = `event: state\ndata: ${data}\n\n`;
     for (const ctrl of clients) {
-      try { ctrl.enqueue(msg); } catch { clients.delete(ctrl); }
+      try {
+        ctrl.enqueue(msg);
+      } catch {
+        clients.delete(ctrl);
+      }
     }
   }
 
   function broadcastNotification(event: NotificationEvent) {
     const msg = `event: notification\ndata: ${JSON.stringify(event)}\n\n`;
     for (const ctrl of clients) {
-      try { ctrl.enqueue(msg); } catch { clients.delete(ctrl); }
+      try {
+        ctrl.enqueue(msg);
+      } catch {
+        clients.delete(ctrl);
+      }
     }
   }
 
   // Track last-seen state per workflow for change detection
-  let lastPollAts: Record<string, number> = {};
-  let lastRunningSizes: Record<string, number> = {};
-  let lastPendingSizes: Record<string, number> = {};
+  const lastPollAts: Record<string, number> = {};
+  const lastRunningSizes: Record<string, number> = {};
+  const lastPendingSizes: Record<string, number> = {};
 
   const sseInterval = setInterval(() => {
     const snapshots = manager.getAllSnapshots();
@@ -100,19 +108,25 @@ export function startDashboardServer(
             const data = JSON.stringify({ workflows });
             ctrl.enqueue(`event: state\ndata: ${data}\n\n`);
           },
-          cancel() { clients.delete(ctrl); },
+          cancel() {
+            clients.delete(ctrl);
+          },
         });
 
         req.signal.addEventListener("abort", () => {
           clients.delete(ctrl);
-          try { ctrl.close(); } catch {}
+          try {
+            ctrl.close();
+          } catch {
+            // ignore close errors on already-closed streams
+          }
         });
 
         return new Response(stream, {
           headers: {
             "Content-Type": "text/event-stream",
             "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
           },
         });
       }
@@ -241,7 +255,11 @@ export function startDashboardServer(
     stop() {
       clearInterval(sseInterval);
       for (const ctrl of clients) {
-        try { ctrl.close(); } catch {}
+        try {
+          ctrl.close();
+        } catch {
+          // ignore close errors on already-closed streams
+        }
       }
       clients.clear();
       server.stop();

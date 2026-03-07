@@ -20,23 +20,29 @@ export function useSSE(): SSEState {
         try {
           const data = JSON.parse((e as MessageEvent).data);
           const workflows: Record<string, WorkflowSummary> = data.workflows ?? {};
-          setState(s => ({ ...s, workflows, connected: true }));
-        } catch {}
+          setState((s) => ({ ...s, workflows, connected: true }));
+        } catch {
+          // ignore malformed SSE event data
+        }
       });
 
       es.addEventListener("notification", (e) => {
         try {
           const event = JSON.parse((e as MessageEvent).data) as NotificationEvent;
-          setState(s => ({ ...s, lastNotification: event }));
-        } catch {}
+          setState((s) => ({ ...s, lastNotification: event }));
+        } catch {
+          // ignore malformed SSE event data
+        }
       });
 
-      es.onopen = () => setState(s => ({ ...s, connected: true }));
-      es.onerror = () => setState(s => ({ ...s, connected: false }));
+      es.onopen = () => setState((s) => ({ ...s, connected: true }));
+      es.onerror = () => setState((s) => ({ ...s, connected: false }));
     }
 
     connect();
-    return () => { esRef.current?.close(); };
+    return () => {
+      esRef.current?.close();
+    };
   }, []);
 
   return state;

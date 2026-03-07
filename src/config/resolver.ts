@@ -21,9 +21,7 @@ export function resolveConfig(raw: Record<string, unknown>): Record<string, unkn
       if (typeof v === "string") {
         out[k] = resolveEnvVars(v);
       } else if (Array.isArray(v)) {
-        out[k] = v.map((item) =>
-          typeof item === "string" ? resolveEnvVars(item) : item,
-        );
+        out[k] = v.map((item) => (typeof item === "string" ? resolveEnvVars(item) : item));
       } else if (v !== null && typeof v === "object") {
         out[k] = walk(v as Record<string, unknown>);
       } else {

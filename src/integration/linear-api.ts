@@ -1,16 +1,6 @@
 import { logger } from "../observability/logger.ts";
-import {
-  FETCH_ALL_ISSUES,
-  FETCH_SINGLE_ISSUE,
-  FETCH_ALL_PROJECTS,
-  FETCH_PROJECT_BY_ID,
-} from "./linear-queries.ts";
-import type {
-  LinearIssueNode,
-  LinearProjectNode,
-  LinearProjectListNode,
-  LinearPageInfo,
-} from "./linear-types.ts";
+import { FETCH_ALL_ISSUES, FETCH_SINGLE_ISSUE, FETCH_ALL_PROJECTS, FETCH_PROJECT_BY_ID } from "./linear-queries.ts";
+import type { LinearIssueNode, LinearProjectNode, LinearProjectListNode, LinearPageInfo } from "./linear-types.ts";
 import type { TrackerConfig } from "../config/schema.ts";
 
 const LINEAR_API = "https://api.linear.app/graphql";
@@ -19,7 +9,7 @@ async function linearGraphql<T>(
   apiKey: string,
   query: string,
   variables: Record<string, unknown> = {},
-  operation?: string
+  operation?: string,
 ): Promise<T> {
   logger.debug("linear graphql request", { operation: operation ?? "unknown", variables: JSON.stringify(variables) });
   const res = await fetch(LINEAR_API, {
@@ -46,18 +36,24 @@ async function linearGraphql<T>(
 type IssuesPageData = { issues: { nodes: LinearIssueNode[]; pageInfo: LinearPageInfo } };
 type ProjectsPageData = { projects: { nodes: LinearProjectListNode[]; pageInfo: LinearPageInfo } };
 
-export async function fetchAllIssueNodes(
-  apiKey: string,
-  activeStates: string[]
-): Promise<LinearIssueNode[]> {
+export async function fetchAllIssueNodes(apiKey: string, activeStates: string[]): Promise<LinearIssueNode[]> {
   let after: string | null = null;
   const all: LinearIssueNode[] = [];
   let page = 0;
   const filter: Record<string, unknown> = { state: { name: { in: activeStates } } };
 
   while (true) {
-    const data: IssuesPageData = await linearGraphql<IssuesPageData>(apiKey, FETCH_ALL_ISSUES, { after, filter }, "fetchIssues");
-    logger.debug("linear issues page", { page, count: data.issues.nodes.length, hasNextPage: data.issues.pageInfo.hasNextPage });
+    const data: IssuesPageData = await linearGraphql<IssuesPageData>(
+      apiKey,
+      FETCH_ALL_ISSUES,
+      { after, filter },
+      "fetchIssues",
+    );
+    logger.debug("linear issues page", {
+      page,
+      count: data.issues.nodes.length,
+      hasNextPage: data.issues.pageInfo.hasNextPage,
+    });
     all.push(...data.issues.nodes);
     if (!data.issues.pageInfo.hasNextPage) break;
     after = data.issues.pageInfo.endCursor;
@@ -67,18 +63,24 @@ export async function fetchAllIssueNodes(
   return all;
 }
 
-export async function fetchAllProjectNodes(
-  apiKey: string,
-  activeStates: string[]
-): Promise<LinearProjectListNode[]> {
+export async function fetchAllProjectNodes(apiKey: string, activeStates: string[]): Promise<LinearProjectListNode[]> {
   let after: string | null = null;
   const all: LinearProjectListNode[] = [];
   let page = 0;
   const filter: Record<string, unknown> = { status: { name: { in: activeStates } } };
 
   while (true) {
-    const data: ProjectsPageData = await linearGraphql<ProjectsPageData>(apiKey, FETCH_ALL_PROJECTS, { after, filter }, "fetchProjects");
-    logger.debug("linear projects page", { page, count: data.projects.nodes.length, hasNextPage: data.projects.pageInfo.hasNextPage });
+    const data: ProjectsPageData = await linearGraphql<ProjectsPageData>(
+      apiKey,
+      FETCH_ALL_PROJECTS,
+      { after, filter },
+      "fetchProjects",
+    );
+    logger.debug("linear projects page", {
+      page,
+      count: data.projects.nodes.length,
+      hasNextPage: data.projects.pageInfo.hasNextPage,
+    });
     all.push(...data.projects.nodes);
     if (!data.projects.pageInfo.hasNextPage) break;
     after = data.projects.pageInfo.endCursor;
@@ -88,28 +90,17 @@ export async function fetchAllProjectNodes(
   return all;
 }
 
-export async function fetchOneIssueNode(
-  apiKey: string,
-  id: string
-): Promise<LinearIssueNode | null> {
-  const data = await linearGraphql<{ issue: LinearIssueNode | null }>(
-    apiKey,
-    FETCH_SINGLE_ISSUE,
-    { id },
-    "fetchIssue"
-  );
+export async function fetchOneIssueNode(apiKey: string, id: string): Promise<LinearIssueNode | null> {
+  const data = await linearGraphql<{ issue: LinearIssueNode | null }>(apiKey, FETCH_SINGLE_ISSUE, { id }, "fetchIssue");
   return data.issue;
 }
 
-export async function fetchOneProjectNode(
-  apiKey: string,
-  id: string
-): Promise<LinearProjectNode | null> {
+export async function fetchOneProjectNode(apiKey: string, id: string): Promise<LinearProjectNode | null> {
   const data = await linearGraphql<{ project: LinearProjectNode | null }>(
     apiKey,
     FETCH_PROJECT_BY_ID,
     { id },
-    "fetchProject"
+    "fetchProject",
   );
   return data.project;
 }

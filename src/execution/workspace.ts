@@ -36,9 +36,7 @@ export async function sweepWorkspaces(baseDir: string, activeItemIds: Set<string
     await mkdir(baseDir, { recursive: true });
     const entries = await readdir(baseDir);
     for (const entry of entries) {
-      const isActive = Array.from(activeItemIds).some(id =>
-        entry.includes(id.slice(0, 8))
-      );
+      const isActive = Array.from(activeItemIds).some((id) => entry.includes(id.slice(0, 8)));
       if (!isActive) {
         const dir = join(baseDir, entry);
         safetyCheck(dir, baseDir);

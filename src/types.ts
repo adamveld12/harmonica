@@ -179,12 +179,12 @@ export interface CompletedSession {
 
 /** Reason a worker exited. */
 export type WorkerExitReason =
-  | "completed"   // agent indicated it finished
-  | "stalled"     // lastEventAt exceeded stall_timeout_ms
-  | "max_turns"   // reached agent.max_turns
-  | "error"       // unhandled error
-  | "terminal"    // issue transitioned to a terminal state mid-run
-  | "aborted";    // abortController.abort() called externally
+  | "completed" // agent indicated it finished
+  | "stalled" // lastEventAt exceeded stall_timeout_ms
+  | "max_turns" // reached agent.max_turns
+  | "error" // unhandled error
+  | "terminal" // issue transitioned to a terminal state mid-run
+  | "aborted"; // abortController.abort() called externally
 
 /** Summary returned by a worker when it finishes. */
 export interface WorkerResult {
@@ -265,9 +265,9 @@ export interface WorkflowConfig {
 
 /** Variables available when rendering the Liquid prompt template. */
 export interface PromptVariables {
-  issue: NormalizedIssue | null;     // populated when mode=issues
+  issue: NormalizedIssue | null; // populated when mode=issues
   project: NormalizedProject | null; // populated when mode=projects
-  item: WorkItem;                    // always populated (generic access)
+  item: WorkItem; // always populated (generic access)
   attempt: number;
   workspace_dir: string;
 }

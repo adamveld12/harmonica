@@ -32,10 +32,7 @@ import {
 } from "./state.ts";
 import { selectForDispatch, selectPending, checkEligibility } from "./dispatcher.ts";
 import { createRetryEntry, popDueRetries } from "./retry.ts";
-import {
-  detectStalls,
-  abortStalled,
-} from "./reconciler.ts";
+import { detectStalls, abortStalled } from "./reconciler.ts";
 import { logger } from "../observability/logger.ts";
 import type { WorkspaceManager } from "../execution/workspace.ts";
 import { runHooks } from "../execution/hooks.ts";
@@ -126,9 +123,7 @@ export class Orchestrator {
         entry.abortController.abort();
       }
 
-      const promises = Array.from(this.state.running.values()).map((e) =>
-        e.promise.catch(() => {}),
-      );
+      const promises = Array.from(this.state.running.values()).map((e) => e.promise.catch(() => {}));
       await Promise.all(promises);
       await Promise.all(this.pendingResults);
       await loopPromise.catch(() => {});
@@ -159,10 +154,7 @@ export class Orchestrator {
       logger.info("polled tracker", { candidate_count: candidates.length });
     } catch (err) {
       this.consecutivePollFailures++;
-      const backoff = Math.min(
-        this.config.poll_interval_ms * Math.pow(2, this.consecutivePollFailures),
-        300_000,
-      );
+      const backoff = Math.min(this.config.poll_interval_ms * Math.pow(2, this.consecutivePollFailures), 300_000);
       logger.error("tracker poll failed", {
         error: String(err),
         consecutive_failures: this.consecutivePollFailures,
@@ -187,25 +179,28 @@ export class Orchestrator {
       if (freshMap.has(itemId)) continue; // still in filtered candidates, all good
 
       reconcilePromises.push(
-        this.tracker.refreshWorkItem(itemId).then((fresh) => {
-          if (!fresh || fresh.state === "terminal") {
-            logger.info("aborting worker: item terminal or not found", {
+        this.tracker
+          .refreshWorkItem(itemId)
+          .then((fresh) => {
+            if (!fresh || fresh.state === "terminal") {
+              logger.info("aborting worker: item terminal or not found", {
+                item_id: itemId,
+                new_state: fresh?.stateLabel ?? "not_found",
+              });
+              entry.abortController.abort();
+            } else {
+              logger.debug("worker item left filter set but not terminal, continuing", {
+                item_id: itemId,
+                state: fresh.stateLabel,
+              });
+            }
+          })
+          .catch((err) => {
+            logger.warn("reconcile refresh failed, leaving worker running", {
               item_id: itemId,
-              new_state: fresh?.stateLabel ?? "not_found",
+              error: String(err),
             });
-            entry.abortController.abort();
-          } else {
-            logger.debug("worker item left filter set but not terminal, continuing", {
-              item_id: itemId,
-              state: fresh.stateLabel,
-            });
-          }
-        }).catch((err) => {
-          logger.warn("reconcile refresh failed, leaving worker running", {
-            item_id: itemId,
-            error: String(err),
-          });
-        })
+          }),
       );
     }
     await Promise.all(reconcilePromises);
@@ -234,11 +229,7 @@ export class Orchestrator {
     }
   }
 
-  private async launchWorker(
-    item: WorkItem,
-    attemptNumber: number,
-    resumeSessionId: string | null,
-  ): Promise<void> {
+  private async launchWorker(item: WorkItem, attemptNumber: number, resumeSessionId: string | null): Promise<void> {
     logger.info("launching worker", {
       item_id: item.id,
       identifier: item.identifier,
@@ -357,7 +348,7 @@ export class Orchestrator {
             "task_complete",
             "Signal that you have completed all work on this task. Call this when you are fully finished.",
             { reason: z.string().optional().describe("Brief summary of what you accomplished") },
-            async () => ({ content: [{ type: "text" as const, text: "Task marked complete." }] })
+            async () => ({ content: [{ type: "text" as const, text: "Task marked complete." }] }),
           ),
         ],
       }) as any,
@@ -395,10 +386,7 @@ export class Orchestrator {
     this.pendingResults.add(resultChain);
   }
 
-  private async handleWorkerResult(
-    result: WorkerResult,
-    attemptNumber: number,
-  ): Promise<void> {
+  private async handleWorkerResult(result: WorkerResult, attemptNumber: number): Promise<void> {
     const item = result.workItem;
     logger.info("worker completed", {
       item_id: item.id,
@@ -407,8 +395,7 @@ export class Orchestrator {
     });
 
     const entry = this.state.running.get(item.id);
-    const workspaceDir =
-      entry?.workspaceDir ?? this.state.workspaces.get(item.id);
+    const workspaceDir = entry?.workspaceDir ?? this.state.workspaces.get(item.id);
 
     const outputLines = drainOutput(this.state, item.id);
 

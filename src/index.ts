@@ -20,7 +20,16 @@ function parseArgs(args: string[]): {
   debug: boolean;
   help: boolean;
 } {
-  const result: { workflows?: string; configDir?: string; serverPort?: number; serverHost?: string; workspaceRepoUrl?: string; envFile?: string; debug: boolean; help: boolean } = {
+  const result: {
+    workflows?: string;
+    configDir?: string;
+    serverPort?: number;
+    serverHost?: string;
+    workspaceRepoUrl?: string;
+    envFile?: string;
+    debug: boolean;
+    help: boolean;
+  } = {
     debug: false,
     help: false,
   };
@@ -34,12 +43,25 @@ function parseArgs(args: string[]): {
     }
     if (arg === "--help" || arg === "-h") result.help = true;
     else if (arg === "--debug") result.debug = true;
-    else if (arg === "--workflows") { const v = nextVal ?? args[++i]; if (v) result.workflows = v; }
-    else if (arg === "--config-dir") { const v = nextVal ?? args[++i]; if (v) result.configDir = v; }
-    else if (arg === "--server.port") { const v = nextVal ?? args[++i]; if (v) result.serverPort = parseInt(v, 10); }
-    else if (arg === "--server.host") { const v = nextVal ?? args[++i]; if (v) result.serverHost = v; }
-    else if (arg === "--workspace.repo_url") { const v = nextVal ?? args[++i]; if (v) result.workspaceRepoUrl = v; }
-    else if (arg === "--env-file") { const v = nextVal ?? args[++i]; if (v) result.envFile = v; }
+    else if (arg === "--workflows") {
+      const v = nextVal ?? args[++i];
+      if (v) result.workflows = v;
+    } else if (arg === "--config-dir") {
+      const v = nextVal ?? args[++i];
+      if (v) result.configDir = v;
+    } else if (arg === "--server.port") {
+      const v = nextVal ?? args[++i];
+      if (v) result.serverPort = parseInt(v, 10);
+    } else if (arg === "--server.host") {
+      const v = nextVal ?? args[++i];
+      if (v) result.serverHost = v;
+    } else if (arg === "--workspace.repo_url") {
+      const v = nextVal ?? args[++i];
+      if (v) result.workspaceRepoUrl = v;
+    } else if (arg === "--env-file") {
+      const v = nextVal ?? args[++i];
+      if (v) result.envFile = v;
+    }
   }
   return result;
 }
@@ -59,8 +81,7 @@ async function loadEnvFile(path: string, required: boolean): Promise<void> {
     const key = line.slice(0, eq).trim();
     if (!key || key in process.env) continue;
     let value = line.slice(eq + 1).trim();
-    if ((value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))) {
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
       value = value.slice(1, -1);
     }
     process.env[key] = value;
@@ -106,7 +127,8 @@ async function main() {
     debug: args.debug,
   });
 
-  const serverPort = args.serverPort ?? (process.env.HARM_SERVER_PORT ? parseInt(process.env.HARM_SERVER_PORT, 10) : undefined);
+  const serverPort =
+    args.serverPort ?? (process.env.HARM_SERVER_PORT ? parseInt(process.env.HARM_SERVER_PORT, 10) : undefined);
   const serverHost = args.serverHost ?? process.env.HARM_SERVER_HOST;
 
   const rawConfigDir = args.configDir ?? process.env.HARM_CONFIG_DIR ?? DEFAULTS.config_dir;
@@ -193,7 +215,7 @@ async function main() {
   logger.info("harmonica running", { pid: process.pid, workflows: manager.listWorkflows() });
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error("Fatal:", err);
   process.exit(1);
 });

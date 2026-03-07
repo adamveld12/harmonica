@@ -16,14 +16,10 @@ export function App() {
   const { prefs, updatePrefs, requestPermission, permissionState } = useNotifications(lastNotification);
 
   const workflowIds = Object.keys(workflows).sort();
-  const [activeTab, setActiveTab] = useState<string | null>(null);
+  const [preferredTab, setActiveTab] = useState<string | null>(null);
 
-  // Auto-select first tab when workflows load or change
-  useEffect(() => {
-    if (!activeTab || !workflowIds.includes(activeTab)) {
-      setActiveTab(workflowIds[0] ?? null);
-    }
-  }, [workflowIds.join(",")]);
+  // Derive active tab: use preferred if still valid, else fall back to first available
+  const activeTab = preferredTab && workflowIds.includes(preferredTab) ? preferredTab : (workflowIds[0] ?? null);
 
   const [configs, setConfigs] = useState<Record<string, ConfigResponse>>({});
 
@@ -36,19 +32,18 @@ export function App() {
           .catch(() => {});
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workflowIds.join(",")]);
 
   const active = activeTab ? workflows[activeTab] : null;
-  const activeConfig = activeTab ? configs[activeTab] ?? null : null;
+  const activeConfig = activeTab ? (configs[activeTab] ?? null) : null;
   const lastPoll = active?.snapshot ? new Date(active.snapshot.lastPollAt).toISOString() : "—";
 
   return (
     <div>
       <h1>Harmonica</h1>
       <p className="meta">
-        <span className={connected ? "connected" : "disconnected"}>
-          {connected ? "live" : "disconnected"}
-        </span>
+        <span className={connected ? "connected" : "disconnected"}>{connected ? "live" : "disconnected"}</span>
         {active?.snapshot && (
           <>
             &nbsp;|&nbsp; Last poll: {lastPoll}
@@ -71,10 +66,14 @@ export function App() {
             const running = wf?.snapshot?.running?.length ?? 0;
             const retrying = wf?.snapshot?.retryQueue?.length ?? 0;
             const pending = wf?.snapshot?.pending?.length ?? 0;
-            const badgeClass = running > 0 ? "badge badge-ok"
-              : retrying > 0 ? "badge badge-retry"
-              : pending > 0 ? "badge badge-pending"
-              : "badge badge-idle";
+            const badgeClass =
+              running > 0
+                ? "badge badge-ok"
+                : retrying > 0
+                  ? "badge badge-retry"
+                  : pending > 0
+                    ? "badge badge-pending"
+                    : "badge badge-idle";
             const count = running > 0 ? running : retrying > 0 ? retrying : pending;
             return (
               <button
@@ -97,9 +96,7 @@ export function App() {
             {active.description && <p className="workflow-description">{active.description}</p>}
             <ConfigPanel config={activeConfig} />
           </div>
-          {(active.snapshot?.pending?.length ?? 0) > 0 && (
-            <PendingTable pending={active.snapshot!.pending} />
-          )}
+          {(active.snapshot?.pending?.length ?? 0) > 0 && <PendingTable pending={active.snapshot!.pending} />}
           <RunningTable running={active.snapshot?.running ?? []} workflowId={activeTab} />
           <RetryTable retryQueue={active.snapshot?.retryQueue ?? []} />
           <CompletedTable completed={active.completed ?? []} workflowId={activeTab} />

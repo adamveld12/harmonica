@@ -25,7 +25,9 @@ export function OutputLog({ issueId, workflowId, live, open }: Props) {
     if (!live) {
       if (loadedRef.current) return;
       loadedRef.current = true;
-      fetchCompletedOutput(issueId).then(setLines).catch(() => {});
+      fetchCompletedOutput(issueId)
+        .then(setLines)
+        .catch(() => {});
       return;
     }
 
@@ -38,14 +40,18 @@ export function OutputLog({ issueId, workflowId, live, open }: Props) {
         const data = await fetchWorkflowLiveOutput(workflowId, issueId, nextIndexRef.current);
         if (data.lines.length > 0) {
           nextIndexRef.current = data.nextIndex;
-          setLines(prev => [...prev, ...data.lines]);
+          setLines((prev) => [...prev, ...data.lines]);
         }
-      } catch {}
+      } catch {
+        // ignore fetch errors; will retry on next poll interval
+      }
       if (active) setTimeout(poll, 2000);
     }
 
     poll();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [issueId, workflowId, live, open]);
 
   useEffect(() => {

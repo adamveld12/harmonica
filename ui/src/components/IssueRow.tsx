@@ -16,13 +16,7 @@ export function IssueRow({ identifier, title, url, meta, children }: Props) {
       <td>
         <details onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
           <summary>
-            <a
-              className="issue-link"
-              href={url}
-              target="_blank"
-              rel="noreferrer"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <a className="issue-link" href={url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
               {identifier} - {title}
             </a>
             <span className="row-meta">{meta}</span>

@@ -10,7 +10,7 @@ export function PendingTable({ pending }: Props) {
       <h2>Pending ({pending.length})</h2>
       <table>
         <tbody>
-          {pending.map(p => (
+          {pending.map((p) => (
             <tr key={p.issueId}>
               <td style={{ padding: "8px 12px" }}>
                 <a className="issue-link" href={p.issueUrl} target="_blank" rel="noreferrer">

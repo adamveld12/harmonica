@@ -1,20 +1,10 @@
-import type {
-  WorkerResult,
-  RetryEntry,
-  OrchestratorState,
-} from "../types.ts";
+import type { WorkerResult, RetryEntry, OrchestratorState } from "../types.ts";
 import type { Config } from "../config/schema.ts";
 
 const RETRY_BASE_MS = 5_000;
 
-function computeBackoff(
-  attemptNumber: number,
-  maxBackoffMs: number,
-): number {
-  return Math.min(
-    RETRY_BASE_MS * Math.pow(2, attemptNumber - 1),
-    maxBackoffMs,
-  );
+function computeBackoff(attemptNumber: number, maxBackoffMs: number): number {
+  return Math.min(RETRY_BASE_MS * Math.pow(2, attemptNumber - 1), maxBackoffMs);
 }
 
 export function createRetryEntry(
@@ -23,11 +13,7 @@ export function createRetryEntry(
   config: Config,
   workspaceDir?: string | null,
 ): RetryEntry | null {
-  if (
-    result.exitReason === "completed" ||
-    result.exitReason === "terminal" ||
-    result.exitReason === "aborted"
-  ) {
+  if (result.exitReason === "completed" || result.exitReason === "terminal" || result.exitReason === "aborted") {
     return null;
   }
 

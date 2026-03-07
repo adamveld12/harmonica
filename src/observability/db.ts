@@ -131,13 +131,13 @@ export class HarmonicaDB {
   listCompleted(limit = 50, workflowId?: string): CompletedSession[] {
     let rows: CompletedSessionRow[];
     if (workflowId) {
-      rows = this.db.prepare(
-        "SELECT * FROM completed_sessions WHERE workflow_id = ? ORDER BY completed_at DESC LIMIT ?"
-      ).all(workflowId, limit) as CompletedSessionRow[];
+      rows = this.db
+        .prepare("SELECT * FROM completed_sessions WHERE workflow_id = ? ORDER BY completed_at DESC LIMIT ?")
+        .all(workflowId, limit) as CompletedSessionRow[];
     } else {
-      rows = this.db.prepare(
-        "SELECT * FROM completed_sessions ORDER BY completed_at DESC LIMIT ?"
-      ).all(limit) as CompletedSessionRow[];
+      rows = this.db
+        .prepare("SELECT * FROM completed_sessions ORDER BY completed_at DESC LIMIT ?")
+        .all(limit) as CompletedSessionRow[];
     }
     return rows.map(rowToSession);
   }
@@ -145,13 +145,15 @@ export class HarmonicaDB {
   getSessionOutput(issueId: string, workflowId?: string): OutputLine[] {
     let row: { output_lines: string } | null;
     if (workflowId) {
-      row = this.db.prepare(
-        "SELECT output_lines FROM completed_sessions WHERE issue_id = ? AND workflow_id = ? ORDER BY completed_at DESC LIMIT 1"
-      ).get(issueId, workflowId) as { output_lines: string } | null;
+      row = this.db
+        .prepare(
+          "SELECT output_lines FROM completed_sessions WHERE issue_id = ? AND workflow_id = ? ORDER BY completed_at DESC LIMIT 1",
+        )
+        .get(issueId, workflowId) as { output_lines: string } | null;
     } else {
-      row = this.db.prepare(
-        "SELECT output_lines FROM completed_sessions WHERE issue_id = ? ORDER BY completed_at DESC LIMIT 1"
-      ).get(issueId) as { output_lines: string } | null;
+      row = this.db
+        .prepare("SELECT output_lines FROM completed_sessions WHERE issue_id = ? ORDER BY completed_at DESC LIMIT 1")
+        .get(issueId) as { output_lines: string } | null;
     }
     if (!row) return [];
     return JSON.parse(row.output_lines) as OutputLine[];

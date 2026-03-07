@@ -91,13 +91,13 @@ export class WorkflowManager {
       absDir,
       async (filePath) => {
         await this.addWorkflow(filePath).catch((err) =>
-          logger.error("failed to add workflow", { path: filePath, error: String(err) })
+          logger.error("failed to add workflow", { path: filePath, error: String(err) }),
         );
       },
       async (filePath) => {
         const id = WorkflowManager.idFromPath(filePath);
         await this.removeWorkflow(id).catch((err) =>
-          logger.error("failed to remove workflow", { id, error: String(err) })
+          logger.error("failed to remove workflow", { id, error: String(err) }),
         );
       },
       (err) => logger.error("directory watcher error", { error: String(err) }),
@@ -135,7 +135,7 @@ export class WorkflowManager {
     }
     if (config.workspace.repo_url?.includes("${")) {
       throw new Error(
-        `workflow "${id}": workspace.repo_url contains unresolved variable: ${config.workspace.repo_url}. Set the environment variable or pass --workspace.repo_url.`
+        `workflow "${id}": workspace.repo_url contains unresolved variable: ${config.workspace.repo_url}. Set the environment variable or pass --workspace.repo_url.`,
       );
     }
 
@@ -155,16 +155,7 @@ export class WorkflowManager {
     });
 
     const state = createState();
-    const orchestrator = new Orchestrator(
-      config,
-      tracker,
-      runner,
-      workspaceManager,
-      workflow,
-      state,
-      this.db,
-      id,
-    );
+    const orchestrator = new Orchestrator(config, tracker, runner, workspaceManager, workflow, state, this.db, id);
 
     if (this.notifyHandler) {
       const handler = this.notifyHandler;
@@ -182,7 +173,10 @@ export class WorkflowManager {
             newConfig = { ...newConfig, workspace: { ...newConfig.workspace, repo_url: this.repoUrlOverride } };
           }
           if (newConfig.workspace.repo_url?.includes("${")) {
-            logger.warn("workflow hot-reload skipped: unresolved repo_url", { id, repo_url: newConfig.workspace.repo_url });
+            logger.warn("workflow hot-reload skipped: unresolved repo_url", {
+              id,
+              repo_url: newConfig.workspace.repo_url,
+            });
             return;
           }
           if (!this.sensorManager) {
@@ -234,9 +228,7 @@ export class WorkflowManager {
     this.sensorManager?.unsubscribe(id);
     instance.stopWatcher();
     if (instance.shutdown) {
-      await instance.shutdown().catch((err) =>
-        logger.error("workflow shutdown error", { id, error: String(err) })
-      );
+      await instance.shutdown().catch((err) => logger.error("workflow shutdown error", { id, error: String(err) }));
     }
     this.instances.delete(id);
     logger.info("workflow removed", { id });
@@ -250,13 +242,25 @@ export class WorkflowManager {
     return this.instances.get(id);
   }
 
-  getAllSnapshots(): Record<WorkflowId, { snapshot: StateSnapshot; config: Config; completed: CompletedSession[]; name?: string; description?: string }> {
-    const result: Record<WorkflowId, { snapshot: StateSnapshot; config: Config; completed: CompletedSession[]; name?: string; description?: string }> = {};
+  getAllSnapshots(): Record<
+    WorkflowId,
+    { snapshot: StateSnapshot; config: Config; completed: CompletedSession[]; name?: string; description?: string }
+  > {
+    const result: Record<
+      WorkflowId,
+      { snapshot: StateSnapshot; config: Config; completed: CompletedSession[]; name?: string; description?: string }
+    > = {};
     for (const [id, instance] of this.instances) {
       const state = instance.orchestrator.getState();
       const snapshot = { ...buildSnapshot(state), workflowId: id };
       const completed = this.db ? this.db.listCompleted(50, id) : [];
-      result[id] = { snapshot, config: instance.config, completed, name: instance.name, description: instance.description };
+      result[id] = {
+        snapshot,
+        config: instance.config,
+        completed,
+        name: instance.name,
+        description: instance.description,
+      };
     }
     return result;
   }

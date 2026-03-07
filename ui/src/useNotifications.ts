@@ -14,19 +14,21 @@ function loadPrefs(): NotificationPreferences {
   try {
     const raw = localStorage.getItem(PREFS_KEY);
     if (raw) return { ...DEFAULT_PREFS, ...JSON.parse(raw) };
-  } catch {}
+  } catch {
+    // ignore malformed localStorage data
+  }
   return { ...DEFAULT_PREFS };
 }
 
 function savePrefs(prefs: NotificationPreferences) {
   try {
     localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
-  } catch {}
+  } catch {
+    // ignore localStorage write errors (e.g. private browsing quota)
+  }
 }
 
-function buildNotification(
-  event: NotificationEvent
-): { title: string; body: string; options: NotificationOptions } {
+function buildNotification(event: NotificationEvent): { title: string; body: string; options: NotificationOptions } {
   const workflowPrefix = event.workflowName ?? event.workflowId;
   const prefix = workflowPrefix ? `[${workflowPrefix}] ` : "";
   const tag = event.workflowId ?? "default";
@@ -67,11 +69,11 @@ function buildNotification(
 export function useNotifications(lastNotification: NotificationEvent | null) {
   const [prefs, setPrefsState] = useState<NotificationPreferences>(loadPrefs);
   const [permissionState, setPermissionState] = useState<NotificationPermission>(
-    typeof Notification !== "undefined" ? Notification.permission : "default"
+    typeof Notification !== "undefined" ? Notification.permission : "default",
   );
 
   const updatePrefs = useCallback((patch: Partial<NotificationPreferences>) => {
-    setPrefsState(prev => {
+    setPrefsState((prev) => {
       const next = { ...prev, ...patch };
       savePrefs(next);
       return next;

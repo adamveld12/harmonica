@@ -22,10 +22,7 @@ export async function loadSensors(basePath: string): Promise<SensorsFileConfig> 
   return SensorsFileSchema.parse(resolved);
 }
 
-export function watchSensors(
-  basePath: string,
-  onChange: (config: SensorsFileConfig) => void
-): () => void {
+export function watchSensors(basePath: string, onChange: (config: SensorsFileConfig) => void): () => void {
   const filePath = join(basePath, SENSORS_FILE);
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 

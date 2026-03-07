@@ -16,9 +16,7 @@ export function SettingsPanel({ prefs, updatePrefs, permissionState, requestPerm
       <div className="config-grid">
         <div>
           <strong>Notification Permission:</strong>{" "}
-          <span className={permissionState === "granted" ? "connected" : "disconnected"}>
-            {permissionState}
-          </span>
+          <span className={permissionState === "granted" ? "connected" : "disconnected"}>{permissionState}</span>
           {permissionState === "default" && (
             <button className="perm-btn" onClick={requestPermission}>
               Grant Permission
@@ -38,9 +36,9 @@ export function SettingsPanel({ prefs, updatePrefs, permissionState, requestPerm
             <input
               type="checkbox"
               checked={prefs.enabled}
-              onChange={e => updatePrefs({ enabled: e.target.checked })}
-            />
-            {" "}{prefs.enabled ? "enabled" : "disabled"}
+              onChange={(e) => updatePrefs({ enabled: e.target.checked })}
+            />{" "}
+            {prefs.enabled ? "enabled" : "disabled"}
           </label>
         </div>
         <div>
@@ -50,9 +48,9 @@ export function SettingsPanel({ prefs, updatePrefs, permissionState, requestPerm
               type="checkbox"
               checked={prefs.agent_started}
               disabled={!prefs.enabled}
-              onChange={e => updatePrefs({ agent_started: e.target.checked })}
-            />
-            {" "}{prefs.agent_started ? "on" : "off"}
+              onChange={(e) => updatePrefs({ agent_started: e.target.checked })}
+            />{" "}
+            {prefs.agent_started ? "on" : "off"}
           </label>
         </div>
         <div>
@@ -62,9 +60,9 @@ export function SettingsPanel({ prefs, updatePrefs, permissionState, requestPerm
               type="checkbox"
               checked={prefs.agent_finished}
               disabled={!prefs.enabled}
-              onChange={e => updatePrefs({ agent_finished: e.target.checked })}
-            />
-            {" "}{prefs.agent_finished ? "on" : "off"}
+              onChange={(e) => updatePrefs({ agent_finished: e.target.checked })}
+            />{" "}
+            {prefs.agent_finished ? "on" : "off"}
           </label>
         </div>
         <div>
@@ -74,9 +72,9 @@ export function SettingsPanel({ prefs, updatePrefs, permissionState, requestPerm
               type="checkbox"
               checked={prefs.agent_errored}
               disabled={!prefs.enabled}
-              onChange={e => updatePrefs({ agent_errored: e.target.checked })}
-            />
-            {" "}{prefs.agent_errored ? "on" : "off"}
+              onChange={(e) => updatePrefs({ agent_errored: e.target.checked })}
+            />{" "}
+            {prefs.agent_errored ? "on" : "off"}
           </label>
         </div>
       </div>

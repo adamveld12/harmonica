@@ -9,11 +9,7 @@ function formatValue(v: unknown): string {
 }
 
 function log(level: Level, msg: string, fields?: Record<string, unknown>): void {
-  const parts = [
-    `ts=${new Date().toISOString()}`,
-    `level=${level}`,
-    `msg=${formatValue(msg)}`,
-  ];
+  const parts = [`ts=${new Date().toISOString()}`, `level=${level}`, `msg=${formatValue(msg)}`];
   if (fields) {
     for (const [k, v] of Object.entries(fields)) {
       parts.push(`${k}=${formatValue(v)}`);

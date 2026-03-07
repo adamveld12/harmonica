@@ -19,20 +19,14 @@ export class ClaudeRunner implements AgentRunner {
         ...(sessionId ? { resume: sessionId } : {}),
         abortController,
         permissionMode: this.config.permissionMode,
-        ...(this.config.permissionMode === "bypassPermissions"
-          ? { allowDangerouslySkipPermissions: true }
-          : {}),
+        ...(this.config.permissionMode === "bypassPermissions" ? { allowDangerouslySkipPermissions: true } : {}),
         maxTurns: 1,
         settingSources: ["user", "project", "local"],
-        ...(this.config.allowedTools?.length
-          ? { allowedTools: this.config.allowedTools }
-          : {}),
+        ...(this.config.allowedTools?.length ? { allowedTools: this.config.allowedTools } : {}),
         ...(mcpServers && Object.keys(mcpServers).length > 0
           ? { mcpServers: mcpServers as Record<string, SdkMcpServerConfig> }
           : {}),
-        ...(this.config.apiKey
-          ? { env: { ...process.env, ANTHROPIC_API_KEY: this.config.apiKey } }
-          : {}),
+        ...(this.config.apiKey ? { env: { ...process.env, ANTHROPIC_API_KEY: this.config.apiKey } } : {}),
         stderr: (data: string) => {
           const line = data.trim();
           if (line) stderrLines.push(line);
@@ -64,7 +58,12 @@ export class ClaudeRunner implements AgentRunner {
         }
 
         if (msg.type === "assistant" && "message" in msg && msg.message?.content) {
-          for (const block of msg.message.content as Array<{ type: string; text?: string; name?: string; input?: unknown }>) {
+          for (const block of msg.message.content as Array<{
+            type: string;
+            text?: string;
+            name?: string;
+            input?: unknown;
+          }>) {
             if (block.type === "text" && block.text) {
               yield { type: "text", content: block.text };
             } else if (block.type === "tool_use" && block.name) {
@@ -86,7 +85,7 @@ export class ClaudeRunner implements AgentRunner {
 
       const stderrOutput = stderrLines.join("\n").toLowerCase();
       const authPatterns = ["login", "auth", "token", "unauthenticated", "unauthorized", "credentials", "sign in"];
-      const isAuthFailure = authPatterns.some(p => stderrOutput.includes(p));
+      const isAuthFailure = authPatterns.some((p) => stderrOutput.includes(p));
       const isTrimCrash = error.message?.includes(".trim") || error.message?.includes("undefined is not an object");
 
       if (isAuthFailure) {
@@ -94,9 +93,10 @@ export class ClaudeRunner implements AgentRunner {
         logger.error("auth failure detected", { stderr: stderrLines.slice(-3).join(" | ") });
         yield { type: "error", error: msg };
       } else {
-        const msg = isTrimCrash && stderrLines.length > 0
-          ? `CLI process failed on startup. stderr: ${stderrLines.slice(-5).join(" | ")}`
-          : error.message;
+        const msg =
+          isTrimCrash && stderrLines.length > 0
+            ? `CLI process failed on startup. stderr: ${stderrLines.slice(-5).join(" | ")}`
+            : error.message;
         logger.error("claude runner error", { error: msg });
         yield { type: "error", error: msg };
       }

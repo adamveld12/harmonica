@@ -1,5 +1,5 @@
 import { watch, readdirSync } from "fs";
-import { join, extname, basename } from "path";
+import { join, extname } from "path";
 import { loadWorkflow } from "./workflow-loader.ts";
 import { logger } from "../observability/logger.ts";
 import type { WorkflowConfig } from "../types.ts";
@@ -50,7 +50,7 @@ export function watchWorkflowDirectory(
   let knownFiles = new Set(
     readdirSync(dirPath)
       .filter((f) => extname(f) === ".md")
-      .map((f) => join(dirPath, f))
+      .map((f) => join(dirPath, f)),
   );
 
   const watcher = watch(dirPath, { persistent: false }, () => {
@@ -60,7 +60,7 @@ export function watchWorkflowDirectory(
         const current = new Set(
           readdirSync(dirPath)
             .filter((f) => extname(f) === ".md")
-            .map((f) => join(dirPath, f))
+            .map((f) => join(dirPath, f)),
         );
         for (const f of current) {
           if (!knownFiles.has(f)) {

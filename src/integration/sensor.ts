@@ -42,9 +42,7 @@ export class LinearSensor {
   async start(): Promise<void> {
     await this.poll();
     this.pollTimer = setInterval(() => {
-      this.poll().catch((err) =>
-        logger.error("sensor poll interval error", { error: String(err) })
-      );
+      this.poll().catch((err) => logger.error("sensor poll interval error", { error: String(err) }));
     }, this.config.poll_interval_ms);
   }
 
@@ -57,9 +55,7 @@ export class LinearSensor {
 
   private activeStates(): string[] {
     if (this.config.active_states?.length) return this.config.active_states;
-    return this.config.mode === "projects"
-      ? DEFAULT_ACTIVE_STATES_PROJECTS
-      : DEFAULT_ACTIVE_STATES_ISSUES;
+    return this.config.mode === "projects" ? DEFAULT_ACTIVE_STATES_PROJECTS : DEFAULT_ACTIVE_STATES_ISSUES;
   }
 
   private async poll(): Promise<void> {

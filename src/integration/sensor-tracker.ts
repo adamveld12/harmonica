@@ -4,7 +4,10 @@ import type { TrackerConfig } from "../config/schema.ts";
 import type { LinearSensor } from "./sensor.ts";
 
 export class SensorTrackerClient implements TrackerClient {
-  constructor(private sensor: LinearSensor, private config: TrackerConfig) {}
+  constructor(
+    private sensor: LinearSensor,
+    private config: TrackerConfig,
+  ) {}
 
   async fetchCandidates(): Promise<WorkItem[]> {
     return this.sensor.getCandidates(this.config);

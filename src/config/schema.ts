@@ -15,22 +15,21 @@ export const SensorsFileSchema = z.record(z.string(), SensorSchema);
 export type SensorConfig = z.infer<typeof SensorSchema>;
 export type SensorsFileConfig = z.infer<typeof SensorsFileSchema>;
 
-export const TrackerSchema = z
-  .object({
-    type: z.literal("linear"),
-    sensor: z.string(),
-    filter_labels: z.array(z.string()).optional(),
-    filter_states: z.array(z.string()).optional(),
-    filter_project: z.string().optional(),
-    filter_assignees: z.array(z.string()).optional(),
-    project_id: z.string().optional(),
-    project_name: z.string().optional(),
-    // Populated at runtime from sensor, not provided in workflow frontmatter
-    api_key: z.string().optional(),
-    mode: z.enum(["issues", "projects"]).optional(),
-    active_states: z.array(z.string()).optional(),
-    terminal_states: z.array(z.string()).optional(),
-  });
+export const TrackerSchema = z.object({
+  type: z.literal("linear"),
+  sensor: z.string(),
+  filter_labels: z.array(z.string()).optional(),
+  filter_states: z.array(z.string()).optional(),
+  filter_project: z.string().optional(),
+  filter_assignees: z.array(z.string()).optional(),
+  project_id: z.string().optional(),
+  project_name: z.string().optional(),
+  // Populated at runtime from sensor, not provided in workflow frontmatter
+  api_key: z.string().optional(),
+  mode: z.enum(["issues", "projects"]).optional(),
+  active_states: z.array(z.string()).optional(),
+  terminal_states: z.array(z.string()).optional(),
+});
 
 export const AgentSchema = z
   .object({
@@ -39,9 +38,7 @@ export const AgentSchema = z
     turn_timeout_ms: z.number().default(120_000),
     max_retry_backoff_ms: z.number().default(300_000),
     max_concurrency: z.number().default(3),
-    permission_mode: z
-      .enum(["bypassPermissions", "default", "acceptEdits"])
-      .default("bypassPermissions"),
+    permission_mode: z.enum(["bypassPermissions", "default", "acceptEdits"]).default("bypassPermissions"),
     allowed_tools: z.array(z.string()).optional(),
     auth_method: z.enum(["api_key", "subscription"]).default("subscription"),
     api_key: z.string().optional(),

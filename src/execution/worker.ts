@@ -1,7 +1,13 @@
 import type {
-  WorkItem, NormalizedIssue, NormalizedProject,
-  AgentRunner, WorkerResult, TokenUsage,
-  WorkflowConfig, McpServerFactory, OutputLine,
+  WorkItem,
+  NormalizedIssue,
+  NormalizedProject,
+  AgentRunner,
+  WorkerResult,
+  TokenUsage,
+  WorkflowConfig,
+  McpServerFactory,
+  OutputLine,
 } from "../types.ts";
 import type { Config } from "../config/schema.ts";
 import type { TrackerClient } from "../integration/tracker.ts";
@@ -39,14 +45,26 @@ function addUsage(a: TokenUsage, b: Partial<TokenUsage>): TokenUsage {
   };
 }
 
-const CONTINUATION_PROMPT = "Continue working on the issue. Review what you have done so far and complete any remaining tasks.";
+const CONTINUATION_PROMPT =
+  "Continue working on the issue. Review what you have done so far and complete any remaining tasks.";
 
 const GH_PR_RE = /https:\/\/github\.com\/[^\s)]+\/pull\/\d+/;
 
 export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
   const {
-    item, workspaceDir, config, runner, workflow,
-    tracker, onSessionId, onEvent, onOutput, onTurnStart, onPrUrl, mcpServers, abortController
+    item,
+    workspaceDir,
+    config,
+    runner,
+    workflow,
+    tracker,
+    onSessionId,
+    onEvent,
+    onOutput,
+    onTurnStart,
+    onPrUrl,
+    mcpServers,
+    abortController,
   } = options;
 
   let sessionId = options.sessionId;
@@ -72,9 +90,22 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
   try {
     let prompt: string;
     try {
-      const vars = item.kind === "issue"
-        ? { issue: item as NormalizedIssue, project: null, item, attempt: options.attemptNumber, workspace_dir: workspaceDir }
-        : { issue: null, project: item as NormalizedProject, item, attempt: options.attemptNumber, workspace_dir: workspaceDir };
+      const vars =
+        item.kind === "issue"
+          ? {
+              issue: item as NormalizedIssue,
+              project: null,
+              item,
+              attempt: options.attemptNumber,
+              workspace_dir: workspaceDir,
+            }
+          : {
+              issue: null,
+              project: item as NormalizedProject,
+              item,
+              attempt: options.attemptNumber,
+              workspace_dir: workspaceDir,
+            };
       prompt = await renderPrompt(workflow.promptTemplate, vars);
     } catch (err) {
       logger.error("prompt render failed", { item_id: item.id, error: String(err) });
@@ -88,10 +119,7 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
       onTurnStart(item.id, turn);
 
       const turnController = new AbortController();
-      const timeoutId = setTimeout(
-        () => turnController.abort(),
-        config.agent.turn_timeout_ms
-      );
+      const timeoutId = setTimeout(() => turnController.abort(), config.agent.turn_timeout_ms);
       abortController.signal.addEventListener("abort", () => turnController.abort(), { once: true });
 
       const currentPrompt = turn === 1 ? prompt : CONTINUATION_PROMPT;
@@ -126,9 +154,10 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
             }
             case "tool_use": {
               if (event.toolName === "task_complete") {
-                const reason = typeof event.toolInput === "object" && event.toolInput !== null && "reason" in event.toolInput
-                  ? String((event.toolInput as Record<string, unknown>).reason)
-                  : "agent declared task complete";
+                const reason =
+                  typeof event.toolInput === "object" && event.toolInput !== null && "reason" in event.toolInput
+                    ? String((event.toolInput as Record<string, unknown>).reason)
+                    : "agent declared task complete";
                 onOutput(item.id, { ts: Date.now(), type: "info", content: `task_complete: ${reason}` });
                 logger.info("agent declared task complete", { item_id: item.id, reason });
                 return makeResult("completed", { turnCount: turn });
@@ -199,7 +228,6 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
     }
 
     return makeResult("completed");
-
   } catch (err: unknown) {
     const error = err as Error;
     if (error.name === "AbortError" || abortController.signal.aborted) {

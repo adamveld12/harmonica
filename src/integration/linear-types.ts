@@ -72,11 +72,7 @@ export interface LinearPageInfo {
   endCursor: string | null;
 }
 
-function mapIssueState(
-  stateType: string,
-  stateName: string,
-  config: StateClassificationConfig
-): IssueState {
+function mapIssueState(stateType: string, stateName: string, config: StateClassificationConfig): IssueState {
   if (config.terminal_states?.includes(stateName)) return "terminal";
   if (config.active_states?.includes(stateName)) return "active";
   if (stateType === "completed" || stateType === "cancelled") return "terminal";
@@ -84,10 +80,7 @@ function mapIssueState(
   return "non_active";
 }
 
-function mapProjectState(
-  statusName: string,
-  config: StateClassificationConfig
-): IssueState {
+function mapProjectState(statusName: string, config: StateClassificationConfig): IssueState {
   if (config.terminal_states?.includes(statusName)) return "terminal";
   if (config.active_states?.includes(statusName)) return "active";
   const lower = statusName.toLowerCase();
@@ -98,7 +91,7 @@ function mapProjectState(
 
 export function normalizeProjectListItem(
   node: LinearProjectListNode,
-  config: StateClassificationConfig
+  config: StateClassificationConfig,
 ): NormalizedProject {
   const statusName = node.status?.name ?? "planned";
   return {
@@ -124,10 +117,7 @@ export function normalizeProjectListItem(
   };
 }
 
-export function normalizeIssue(
-  node: LinearIssueNode,
-  config: StateClassificationConfig
-): NormalizedIssue {
+export function normalizeIssue(node: LinearIssueNode, config: StateClassificationConfig): NormalizedIssue {
   return {
     kind: "issue",
     id: node.id,
@@ -146,10 +136,7 @@ export function normalizeIssue(
   };
 }
 
-export function normalizeProject(
-  node: LinearProjectNode,
-  config: StateClassificationConfig
-): NormalizedProject {
+export function normalizeProject(node: LinearProjectNode, config: StateClassificationConfig): NormalizedProject {
   const statusName = node.status?.name ?? "planned";
   const milestones: NormalizedMilestone[] = node.projectMilestones.nodes.map((m) => ({
     id: m.id,

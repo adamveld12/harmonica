@@ -5,11 +5,7 @@ import { logger } from "../observability/logger.ts";
 
 const engine = new Liquid({ strictVariables: false, strictFilters: false });
 
-async function runHook(
-  hookCommand: string,
-  ctx: HookContext,
-  timeoutMs: number
-): Promise<void> {
+async function runHook(hookCommand: string, ctx: HookContext, timeoutMs: number): Promise<void> {
   const templateVars: Record<string, unknown> = {
     workspace_dir: ctx.workspaceDir,
     attempt: ctx.attempt,
@@ -51,7 +47,7 @@ async function runHook(
     setTimeout(() => {
       proc.kill();
       reject(new Error(`Hook timed out after ${timeoutMs}ms`));
-    }, timeoutMs)
+    }, timeoutMs),
   );
 
   const completion = proc.exited.then(async (exitCode) => {
@@ -64,11 +60,7 @@ async function runHook(
   await Promise.race([completion, timeout]);
 }
 
-export async function runHooks(
-  hookName: HookName,
-  hooksConfig: HooksConfig,
-  ctx: HookContext
-): Promise<void> {
+export async function runHooks(hookName: HookName, hooksConfig: HooksConfig, ctx: HookContext): Promise<void> {
   const command = hooksConfig[hookName];
   if (!command) return;
 
