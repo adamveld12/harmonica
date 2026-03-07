@@ -1,7 +1,7 @@
 node_modules
 *.local.*
 ui/dist/
-workflows/
+.agents/workflows/
 dist/
 *.tgz
 .harmonica/*
