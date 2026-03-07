@@ -68,5 +68,9 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adamveld12/harmonica.git"
   }
 }
