@@ -23,7 +23,7 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "build:ui": "cd ui && bun install && bunx vite build",
-    "build:server": "bun build src/index.ts --target bun --packages external --splitting --outdir dist --format esm --banner '#!/usr/bin/env bun'",
+    "build:server": "bun build src/index.ts --target bun --packages external --splitting --outdir dist --format esm",
     "build": "bun run build:server && bun run build:ui",
     "prepack": "bun run build",
     "prepare": "husky",
