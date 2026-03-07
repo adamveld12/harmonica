@@ -1,6 +1,6 @@
 import type { WorkItem, OrchestratorState } from "../types.ts";
 import type { Config } from "../config/schema.ts";
-import { getEffectiveConcurrency } from "../config/config.ts";
+import { getEffectiveConcurrency } from "../config/schema.ts";
 import { isInCooldown } from "./state.ts";
 
 const COMPLETION_COOLDOWN_MS = 30_000;
@@ -22,14 +22,14 @@ export function checkEligibility(
   return null;
 }
 
-export function sortCandidates(issues: WorkItem[]): WorkItem[] {
+function sortCandidates(issues: WorkItem[]): WorkItem[] {
   return [...issues].sort(
     (a, b) =>
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
 }
 
-export function availableSlots(
+function availableSlots(
   state: OrchestratorState,
   config: Config,
 ): number {

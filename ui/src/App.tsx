@@ -102,7 +102,7 @@ export function App() {
           )}
           <RunningTable running={active.snapshot?.running ?? []} workflowId={activeTab} />
           <RetryTable retryQueue={active.snapshot?.retryQueue ?? []} />
-          <CompletedTable completed={active.completed ?? []} />
+          <CompletedTable completed={active.completed ?? []} workflowId={activeTab} />
         </div>
       ) : (
         <p className="meta">No workflows loaded.</p>

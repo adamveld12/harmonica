@@ -42,7 +42,7 @@ agent:
 workspace:
   repo_url: ${HARM_REPO_URL}
 hooks:
-  after_create: git clone ${HARM_REPO_URL} .
+  after_create: git clone {{ repo_url }} .
   before_run: git fetch --quiet || true
 ---
 

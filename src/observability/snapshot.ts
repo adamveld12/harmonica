@@ -60,29 +60,3 @@ export function buildSnapshot(state: OrchestratorState): StateSnapshot {
     isShuttingDown: state.isShuttingDown,
   };
 }
-
-export function buildIssueSnapshot(
-  state: OrchestratorState,
-  itemId: string
-): RunningSnapshot | null {
-  const entry = state.running.get(itemId);
-  if (!entry) return null;
-  return {
-    issueId: entry.workItem.id,
-    issueIdentifier: entry.workItem.identifier,
-    issueTitle: entry.workItem.title,
-    issueUrl: entry.workItem.url,
-    issueLabels: entry.workItem.labels,
-    issueStateLabel: entry.workItem.stateLabel,
-    issueAssigneeName: getWorkItemAssigneeName(entry.workItem),
-    issueProjectName: getWorkItemProjectName(entry.workItem),
-    workItemKind: entry.workItem.kind,
-    sessionId: entry.sessionId,
-    turnCount: entry.turnCount,
-    attemptNumber: entry.attemptNumber,
-    startedAt: entry.startedAt,
-    lastEventAt: entry.lastEventAt,
-    workspaceDir: entry.workspaceDir,
-    prUrl: entry.prUrl,
-  };
-}

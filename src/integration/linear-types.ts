@@ -1,11 +1,11 @@
 import type { NormalizedIssue, NormalizedProject, NormalizedMilestone, IssueState } from "../types.ts";
 
-export type StateClassificationConfig = {
+type StateClassificationConfig = {
   active_states?: string[];
   terminal_states?: string[];
 };
 
-export interface LinearStateNode {
+interface LinearStateNode {
   id: string;
   name: string;
   type: string;
@@ -26,7 +26,7 @@ export interface LinearIssueNode {
   team: { id: string; key: string };
 }
 
-export interface LinearMilestoneNode {
+interface LinearMilestoneNode {
   id: string;
   name: string;
   description: string | null;
@@ -72,7 +72,7 @@ export interface LinearPageInfo {
   endCursor: string | null;
 }
 
-export function mapIssueState(
+function mapIssueState(
   stateType: string,
   stateName: string,
   config: StateClassificationConfig
@@ -84,7 +84,7 @@ export function mapIssueState(
   return "non_active";
 }
 
-export function mapProjectState(
+function mapProjectState(
   statusName: string,
   config: StateClassificationConfig
 ): IssueState {

@@ -124,19 +124,6 @@ export function scheduleRetry(
   state.retryQueue.push(entry);
 }
 
-export function removeRetry(
-  state: OrchestratorState,
-  itemId: string,
-): void {
-  state.retryQueue = state.retryQueue.filter((r) => r.workItem.id !== itemId);
-}
-
-export function getDueRetries(state: OrchestratorState): RetryEntry[] {
-  const now = Date.now();
-  return state.retryQueue.filter((r) => r.retryAt <= now);
-}
-
-
 export function registerWorkspace(
   state: OrchestratorState,
   issueId: string,

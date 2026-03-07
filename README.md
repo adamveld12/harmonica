@@ -82,8 +82,6 @@ bun install
 
 # Set up your .env
 echo "LINEAR_API_KEY=lin_api_..." > .env
-echo "HARM_REPO_URL=https://github.com/your-org/your-repo" >> .env
-
 # Option A: API key auth
 echo "ANTHROPIC_API_KEY=sk-ant-..." >> .env
 
@@ -104,7 +102,6 @@ Harmonica automatically loads a `.env` file from the current directory before re
 # .env
 LINEAR_API_KEY=lin_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ANTHROPIC_API_KEY=sk-ant-...
-HARM_REPO_URL=https://github.com/your-org/your-repo
 ```
 
 Rules:
@@ -238,11 +235,9 @@ tracker:
     - agent
     - ready
 
-  # Only issues in one of these state names (preferred array form)
+  # Only issues in one of these state names (array form)
   filter_states:
     - "In Progress"
-
-  # filter_state: "In Progress"   # deprecated string alias for filter_states
 
   # Only issues belonging to a specific project (by name)
   filter_project: "Q3 Backlog"
@@ -312,22 +307,21 @@ agent:
 
 ```yaml
 workspace:
-  base_dir: ~/.harmonica/workspaces  # parent directory for all workspaces
   repo_url: git@github.com:org/repo.git # required; supports HTTPS and SSH URLs
   cleanup_on_start: true                # remove stale workspaces at startup
   cleanup_on_terminal: true             # remove workspace when issue goes terminal
 ```
 
-Each item gets its own subdirectory under `base_dir`, named `{identifier}-{id_prefix}` (e.g. `ENG-42-a1b2c3d4`).
+Each item gets its own subdirectory under `$HARM_CONFIG_DIR/workspaces/`, named `{identifier}-{id_prefix}` (e.g. `ENG-42-a1b2c3d4`).
 
 ### Hooks
 
-Shell commands executed at lifecycle events. Run inside the workspace directory. Stdout/stderr are logged; a non-zero exit code is logged as a warning (not fatal).
+Shell commands executed at lifecycle events. Run inside the workspace directory. Stdout/stderr are logged. A non-zero exit code is fatal — `after_create` and `before_run` failures prevent the agent from starting; `after_run` and `before_remove` failures are logged as errors and skip workspace cleanup.
 
 ```yaml
 hooks:
   after_create: |
-    git clone ${HARM_REPO_URL} .
+    git clone {{ repo_url }} .
   before_run: git fetch --quiet || true
   after_run: ""
   before_remove: ""
@@ -336,10 +330,12 @@ hooks:
 
 | Hook | When |
 |------|------|
-| `after_create` | Workspace directory created, before first agent run |
-| `before_run` | Before each agent turn (including retries) |
-| `after_run` | After each agent turn completes |
+| `after_create` | Workspace directory created, before the agent starts |
+| `before_run` | Before the agent worker starts (including on retries) |
+| `after_run` | After the agent worker completes (any exit reason) |
 | `before_remove` | Before workspace directory is deleted |
+
+Hook strings support [Liquid](https://liquidjs.com/) template variables including `{{ issue.identifier }}`, `{{ item.title }}`, `{{ workspace_dir }}`, `{{ attempt }}`, and more. See [Hooks Reference](docs/references/hooks.md) for full details.
 
 Environment variables available in hooks:
 
@@ -349,7 +345,6 @@ Environment variables available in hooks:
 | `HARM_ISSUE_IDENTIFIER` | Human identifier, e.g. `ENG-42` |
 | `HARM_WORKSPACE_DIR` | Absolute path to the workspace directory |
 | `HARM_SESSION_ID` | Claude session ID (empty in `after_create`) |
-| `HARM_REPO_URL` | Repository URL from config or `--workspace.repo_url` |
 
 ### Policy
 
@@ -454,25 +449,23 @@ Working directory: `{{ workspace_dir }}`
 Usage: harmonica [options]
 
 Options:
-  --workflows <path>          Path to workflow directory or file (default: ./workflows/ if exists, else ./WORKFLOW.md)
-  --workflow <path>           Legacy alias for --workflows
-  --config <path>             Path to a separate YAML config file (parsed but currently unused)
+  --workflows <path>          Path to a directory of .md workflow files (default: ./workflows/)
+  --config-dir <path>         Config/data directory (env: HARM_CONFIG_DIR; default: ~/.harmonica)
   --server.port <number>      HTTP dashboard port (env fallback: HARM_SERVER_PORT; CLI takes precedence)
   --server.host <host>        HTTP dashboard host (env fallback: HARM_SERVER_HOST; CLI takes precedence)
-  --workspace.repo_url <url>  Repository URL (env fallback: HARM_REPO_URL)
-  --env-file <path>           Path to .env file (default: ./.env if present, silently skipped)
+  --workspace.repo_url <url>  Repository URL (overrides workspace.repo_url in YAML)
+  --env-file <path>           Path to .env file (default: ./.env if present, a warning is emitted if the file is missing)
   --debug                     Enable verbose debug logging (parsed but doesn't currently change log behavior)
   --help, -h                  Show help
 ```
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--workflows` | `./workflows/` or `./WORKFLOW.md` | Directory of workflow `.md` files (primary flag) |
-| `--workflow` | — | Legacy alias for `--workflows` |
-| `--config` | — | Separate YAML config file (parsed but currently unused) |
+| `--workflows` | `./workflows/` | Directory of workflow `.md` files |
+| `--config-dir` | `~/.harmonica` | Config/data directory; CLI takes precedence over env `HARM_CONFIG_DIR` |
 | `--server.port` | — | Dashboard port; CLI takes precedence over env `HARM_SERVER_PORT` |
 | `--server.host` | — | Dashboard host; CLI takes precedence over env `HARM_SERVER_HOST` |
-| `--workspace.repo_url` | — | Repository URL; overrides YAML (env fallback: `HARM_REPO_URL`) |
+| `--workspace.repo_url` | — | Repository URL; overrides `workspace.repo_url` in YAML |
 | `--env-file` | `./.env` | Load environment variables from this file before startup |
 | `--debug` | `false` | Parsed but doesn't currently change log behavior |
 | `--help` / `-h` | — | Print usage and exit |
@@ -483,17 +476,17 @@ Options:
 |----------|----------|-------------|
 | `LINEAR_API_KEY` | Yes | Linear personal API key (used in sensors.yaml) |
 | `ANTHROPIC_API_KEY` | `api_key` mode only | Anthropic API key (not needed for `subscription` mode) |
-| `HARM_REPO_URL` | If hooks use it | Repository URL (or set via `--workspace.repo_url` or `workspace.repo_url` in YAML) |
+| `HARM_CONFIG_DIR` | No | Config/data directory; overridden by `--config-dir` CLI flag. Default: `~/.harmonica` |
 | `HARM_SERVER_PORT` | No | HTTP dashboard port (env fallback; CLI `--server.port` takes precedence) |
 | `HARM_SERVER_HOST` | No | HTTP dashboard host (env fallback; CLI `--server.host` takes precedence) |
 
-**Env var interpolation in YAML**: use `${VAR_NAME}` anywhere in the YAML frontmatter or sensors file. If a variable is not set, the `${VAR_NAME}` string is left intact (no error). Path-like fields (`base_dir`, `workflow`) also expand `~` to the home directory.
+**Env var interpolation in YAML**: use `${VAR_NAME}` anywhere in the YAML frontmatter or sensors file. If a variable is not set, the `${VAR_NAME}` string is left intact (no error). Path-like fields also expand `~` to the home directory.
 
 ```yaml
 tracker:
   sensor: linear-issues
 workspace:
-  base_dir: ~/my-workspaces   # ~ expands to $HOME
+  repo_url: ${HARM_REPO_URL}
 ```
 
 ## HTTP API
@@ -513,17 +506,11 @@ The HTTP dashboard is enabled by passing `--server.port <number>`. It serves a R
 | `/api/v1/workflows/:id/:itemId/stop` | POST | Stop a running worker |
 | `/api/v1/workflows/:id/:issueId/output` | GET | Agent output for an item |
 
-### Backward-Compatible Aggregate Routes
+### Global Routes
 
 | Route | Method | Description |
 |-------|--------|-------------|
-| `/api/v1/state` | GET | Aggregated state across all workflows |
-| `/api/v1/config` | GET | Config (first workflow) |
-| `/api/v1/refresh` | POST | Trigger poll on all workflows |
-| `/api/v1/completed` | GET | All completed items |
-| `/api/v1/completed/:issueId/output` | GET | Agent output by issue ID |
-| `/api/v1/:issueId/output` | GET | Agent output by issue ID |
-| `/api/v1/:issueId` | GET | Single item snapshot |
+| `/api/v1/completed/:issueId/output` | GET | Completed agent output by issue ID (queries DB) |
 | `/` | GET | React dashboard UI (served from `ui/dist/`) |
 
 ## Linear MCP Tool
@@ -532,7 +519,7 @@ Agents running inside Harmonica have access to a Linear MCP tool — a stdio JSO
 
 ## SQLite Persistence
 
-Harmonica stores state in a SQLite database at `~/.harmonica/harmonica.db`, shared across all workflows. This enables:
+Harmonica stores state in a SQLite database at `$HARM_CONFIG_DIR/harmonica.db` (default: `~/.harmonica/harmonica.db`), shared across all workflows. This enables:
 - Completed item history that persists across restarts
 - Agent output retrieval after sessions end
 - Deduplication of work items across workflows
@@ -568,8 +555,7 @@ The continuation prompt sent on resume is: *"Continue working on the issue. Revi
 | `tracker.sensor` | `string` | — | Sensor key from sensors.yaml (required) |
 | `tracker.mode` | `"issues" \| "projects"` | `"issues"` | Dispatch per-issue or per-project (can override sensor) |
 | `tracker.filter_labels` | `string[]` | — | (issues mode) Require ALL labels |
-| `tracker.filter_states` | `string[]` | — | (issues mode) Require issue state to match one of these names (preferred) |
-| `tracker.filter_state` | `string` | — | (issues mode) Deprecated alias for `filter_states`; accepts a single state name |
+| `tracker.filter_states` | `string[]` | — | (issues mode) Require issue state to match one of these names |
 | `tracker.filter_project` | `string` | — | (issues mode) Require matching project name |
 | `tracker.filter_assignees` | `string[]` | — | (issues mode) Filter to issues assigned to any of these display names (OR logic); falls back to sensor `assignees` if unset |
 | `tracker.project_id` | `string` | — | (projects mode) Scope to project UUID |
@@ -587,7 +573,6 @@ The continuation prompt sent on resume is: *"Continue working on the issue. Revi
 | `agent.api_key` | `string` | — | Anthropic API key (optional; only for `api_key` mode) |
 | `agent.allowed_tools` | `string[]` | — | Whitelist of tool names (all if omitted) |
 | **workspace** | | | |
-| `workspace.base_dir` | `string` | `~/.harmonica/workspaces` | Parent for workspace dirs |
 | `workspace.repo_url` | `string` | — | Repository URL (required; HTTPS or SSH) |
 | `workspace.cleanup_on_start` | `boolean` | `true` | Remove stale workspaces at startup |
 | `workspace.cleanup_on_terminal` | `boolean` | `true` | Remove workspace on terminal item |

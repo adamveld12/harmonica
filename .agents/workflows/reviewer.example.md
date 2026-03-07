@@ -21,16 +21,14 @@ agent:
   permission_mode: bypassPermissions
   auth_method: subscription
 
-workspace:
-  repo_url: ${HARM_REPO_URL}
-
 hooks:
-  after_create: |
-    cd {{ workspace_dir }} && git clone ${HARM_REPO_URL:-.} .
-  before_run: |
-    git -C {{ workspace_dir }} fetch --quiet || true
-    git -C {{ workspace_dir }} checkout -B harm/{{ issue.identifier | downcase }} origin/main
   timeout_ms: 120000
+  after_create: |
+    git clone {{ repo_url }} .
+    pnpm install
+  before_run: |
+    git fetch -a --quiet || true
+    git checkout -B harmonica/{{ issue.identifier | downcase }} origin/main
 
 poll_interval_ms: 10000
 stall_timeout_ms: 300000

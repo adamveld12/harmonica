@@ -248,7 +248,7 @@ export interface AgentRunner {
 // Workflow / config
 // ---------------------------------------------------------------------------
 
-/** Parsed WORKFLOW.md representation. */
+/** Parsed workflow representation. */
 export interface WorkflowConfig {
   /** Raw file content (kept for hashing / change detection). */
   raw: string;
@@ -284,6 +284,8 @@ export interface HookContext {
   workspaceDir: string;
   sessionId?: string | null;
   repoUrl?: string;
+  workItem: WorkItem;
+  attempt: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -304,10 +306,6 @@ export interface NotificationEvent {
   /** Only present on agent_errored */
   error?: string;
 }
-
-// ---------------------------------------------------------------------------
-// HTTP server
-// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // WorkItem helper functions
@@ -369,9 +367,6 @@ export interface RunningSnapshot {
   /** GitHub PR URL extracted from agent output, if found. */
   prUrl?: string | null;
 }
-
-/** Serializable form of CompletedSession for the API. */
-export type CompletedSnapshot = CompletedSession;
 
 export interface RetrySnapshot {
   issueId: string;

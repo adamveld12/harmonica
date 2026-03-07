@@ -1,12 +1,9 @@
 import type { RetrySnapshot } from "../types";
 import { IssueRow } from "./IssueRow";
+import { fmtTimestamp } from "../utils";
 
 interface Props {
   retryQueue: RetrySnapshot[];
-}
-
-function fmt(ts: number): string {
-  return new Date(ts).toISOString();
 }
 
 export function RetryTable({ retryQueue }: Props) {
@@ -23,7 +20,7 @@ export function RetryTable({ retryQueue }: Props) {
               identifier={r.issueIdentifier}
               title={r.issueTitle}
               url={r.issueUrl}
-              meta={<>Attempt {r.attemptNumber} &nbsp;|&nbsp; Reason: {r.reason} &nbsp;|&nbsp; Retry: {fmt(r.retryAt)}</>}
+              meta={<>Attempt {r.attemptNumber} &nbsp;|&nbsp; Reason: {r.reason} &nbsp;|&nbsp; Retry: {fmtTimestamp(r.retryAt)}</>}
             >
               {() => (
                 <div className="details-grid">
@@ -32,7 +29,7 @@ export function RetryTable({ retryQueue }: Props) {
                   <div><strong>Labels:</strong> {r.issueLabels.length ? r.issueLabels.join(", ") : "-"}</div>
                   <div><strong>Project:</strong> {r.issueProjectName ?? "-"}</div>
                   <div><strong>Workspace:</strong> {r.workspaceDir ?? "-"}</div>
-                  <div><strong>Retry At:</strong> {fmt(r.retryAt)}</div>
+                  <div><strong>Retry At:</strong> {fmtTimestamp(r.retryAt)}</div>
                   <div><strong>Reason:</strong> {r.reason}</div>
                 </div>
               )}

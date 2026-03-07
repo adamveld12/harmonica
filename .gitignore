@@ -4,3 +4,4 @@ ui/dist/
 workflows/
 dist/
 *.tgz
+.harmonica/*

@@ -24,12 +24,9 @@ agent:
   permission_mode: bypassPermissions
   auth_method: subscription
 
-workspace:
-  repo_url: ${HARM_REPO_URL}
-
 hooks:
   after_create: |
-    cd {{ workspace_dir }} && git clone ${HARM_REPO_URL:-.} .
+    cd {{ workspace_dir }} && git clone {{ repo_url }} .
   before_run: git -C {{ workspace_dir }} fetch --quiet || true
   timeout_ms: 120000
 

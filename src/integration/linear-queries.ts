@@ -1,4 +1,4 @@
-export const ISSUE_FIELDS = `
+const ISSUE_FIELDS = `
   id
   identifier
   title
@@ -28,7 +28,7 @@ export const FETCH_SINGLE_ISSUE = `
   }
 `;
 
-export const PROJECT_LIST_FIELDS = `
+const PROJECT_LIST_FIELDS = `
   id
   name
   slugId
@@ -40,7 +40,7 @@ export const PROJECT_LIST_FIELDS = `
   teams { nodes { id key } }
 `;
 
-export const PROJECT_DETAIL_FIELDS = `
+const PROJECT_DETAIL_FIELDS = `
   id
   name
   slugId

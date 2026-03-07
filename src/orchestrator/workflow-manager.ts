@@ -36,6 +36,7 @@ export class WorkflowManager {
     private workspacesDir: string,
     private db?: HarmonicaDB,
     private sensorManager?: SensorManager,
+    private repoUrlOverride?: string,
   ) {}
 
   getWorkspacesDir(): string {
@@ -103,14 +104,6 @@ export class WorkflowManager {
     );
   }
 
-  async loadSingleFile(filePath: string): Promise<void> {
-    await this.addWorkflow(resolve(filePath));
-    const inst = Array.from(this.instances.values())[0];
-    if (inst?.config.workspace.cleanup_on_start) {
-      await this.sweepStaleWorkspaces();
-    }
-  }
-
   async addWorkflow(filePath: string): Promise<void> {
     const id = WorkflowManager.idFromPath(filePath);
     if (this.instances.has(id)) {
@@ -135,6 +128,15 @@ export class WorkflowManager {
     } catch (err) {
       logger.error("workflow config validation failed", { id, error: String(err) });
       throw err;
+    }
+
+    if (this.repoUrlOverride) {
+      config = { ...config, workspace: { ...config.workspace, repo_url: this.repoUrlOverride } };
+    }
+    if (config.workspace.repo_url?.includes("${")) {
+      throw new Error(
+        `workflow "${id}": workspace.repo_url contains unresolved variable: ${config.workspace.repo_url}. Set the environment variable or pass --workspace.repo_url.`
+      );
     }
 
     if (!this.sensorManager) {
@@ -176,6 +178,13 @@ export class WorkflowManager {
         try {
           const resolved = resolveConfig(wf.frontmatter);
           let newConfig = ConfigSchema.parse(resolved);
+          if (this.repoUrlOverride) {
+            newConfig = { ...newConfig, workspace: { ...newConfig.workspace, repo_url: this.repoUrlOverride } };
+          }
+          if (newConfig.workspace.repo_url?.includes("${")) {
+            logger.warn("workflow hot-reload skipped: unresolved repo_url", { id, repo_url: newConfig.workspace.repo_url });
+            return;
+          }
           if (!this.sensorManager) {
             logger.warn("workflow hot-reload skipped: no SensorManager", { id });
             return;

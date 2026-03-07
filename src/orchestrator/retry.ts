@@ -7,7 +7,7 @@ import type { Config } from "../config/schema.ts";
 
 const RETRY_BASE_MS = 5_000;
 
-export function computeBackoff(
+function computeBackoff(
   attemptNumber: number,
   maxBackoffMs: number,
 ): number {

@@ -68,7 +68,7 @@ workspace:
   repo_url: ${HARM_REPO_URL}
 
 hooks:
-  after_create: git clone ${HARM_REPO_URL} .
+  after_create: git clone {{ repo_url }} .
   before_run: |
     git fetch --quiet || true
     # Check out the PR branch associated with this issue
@@ -130,7 +130,6 @@ Ensure your `.env` has:
 
 ```bash
 LINEAR_API_KEY=lin_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-HARM_REPO_URL=https://github.com/your-org/your-repo
 ```
 
 The `gh` CLI must already be authenticated (`gh auth login`).

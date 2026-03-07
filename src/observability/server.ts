@@ -162,7 +162,7 @@ export function startDashboardServer(
           name: instance.name,
           description: instance.description,
           repo_url: c.workspace.repo_url,
-          base_dir: manager.getWorkspacesDir(),
+          workspaces_dir: manager.getWorkspacesDir(),
           cleanup_on_start: c.workspace.cleanup_on_start,
           cleanup_on_terminal: c.workspace.cleanup_on_terminal,
         });
@@ -209,107 +209,12 @@ export function startDashboardServer(
         return Response.json({ lines, nextIndex: since + lines.length });
       }
 
-      // --- Backward-compat aggregate endpoints ---
-
-      // GET /api/v1/state  — all workflow snapshots keyed by id
-      if (path === "/api/v1/state" && req.method === "GET") {
-        const snapshots = manager.getAllSnapshots();
-        const result: Record<string, unknown> = {};
-        for (const [id, { snapshot }] of Object.entries(snapshots)) result[id] = snapshot;
-        return Response.json(result);
-      }
-
-      // GET /api/v1/config  — first workflow's config (or keyed map)
-      if (path === "/api/v1/config" && req.method === "GET") {
-        const ids = manager.listWorkflows();
-        if (ids.length === 0) return Response.json({});
-        const instance = manager.getInstance(ids[0])!;
-        const c = instance.config;
-        return Response.json({
-          model: c.agent.model,
-          max_turns: c.agent.max_turns,
-          max_concurrency: c.agent.max_concurrency,
-          permission_mode: c.agent.permission_mode,
-          auth_method: c.agent.auth_method,
-          poll_interval_ms: c.poll_interval_ms,
-          stall_timeout_ms: c.stall_timeout_ms,
-          repo_url: c.workspace.repo_url,
-          base_dir: manager.getWorkspacesDir(),
-          cleanup_on_start: c.workspace.cleanup_on_start,
-          cleanup_on_terminal: c.workspace.cleanup_on_terminal,
-        });
-      }
-
-      // POST /api/v1/refresh  — refresh all
-      if (path === "/api/v1/refresh" && req.method === "POST") {
-        manager.triggerRefresh();
-        return Response.json({ ok: true });
-      }
-
-      // GET /api/v1/completed  — all workflows
-      if (path === "/api/v1/completed" && req.method === "GET") {
-        const completed = db ? db.listCompleted(50) : [];
-        return Response.json(completed);
-      }
-
-      // GET /api/v1/completed/{issueId}/output — search across all workflows
+      // GET /api/v1/completed/{issueId}/output — query DB by unique issueId
       const completedOutputMatch = path.match(/^\/api\/v1\/completed\/([^/]+)\/output$/);
       if (completedOutputMatch && req.method === "GET") {
         const issueId = completedOutputMatch[1];
         const lines = db ? db.getSessionOutput(issueId) : [];
         return Response.json(lines);
-      }
-
-      // GET /api/v1/{issueId}/output?since=N — search across all workflows
-      const liveOutputMatch = path.match(/^\/api\/v1\/([^/]+)\/output$/);
-      if (liveOutputMatch && req.method === "GET") {
-        const issueId = liveOutputMatch[1];
-        const since = parseInt(url.searchParams.get("since") ?? "0", 10);
-        for (const instance of Object.values(manager.getAllSnapshots())) {
-          // Look in each orchestrator's state
-          const id = instance.snapshot.workflowId;
-          if (!id) continue;
-          const inst = manager.getInstance(id);
-          if (!inst) continue;
-          const all = inst.orchestrator.getState().outputLogs.get(issueId);
-          if (all) {
-            const lines = all.slice(since);
-            return Response.json({ lines, nextIndex: since + lines.length });
-          }
-        }
-        return Response.json({ lines: [], nextIndex: since });
-      }
-
-      // GET /api/v1/{issueId} — search across all workflows
-      const issueMatch = path.match(/^\/api\/v1\/([^/]+)$/);
-      if (issueMatch && req.method === "GET") {
-        const issueId = issueMatch[1];
-        for (const id of manager.listWorkflows()) {
-          const inst = manager.getInstance(id);
-          if (!inst) continue;
-          const entry = inst.orchestrator.getState().running.get(issueId);
-          if (entry) {
-            return Response.json({
-              issueId: entry.workItem.id,
-              issueIdentifier: entry.workItem.identifier,
-              issueTitle: entry.workItem.title,
-              issueUrl: entry.workItem.url,
-              issueLabels: entry.workItem.labels,
-              issueStateLabel: entry.workItem.stateLabel,
-              issueAssigneeName: entry.workItem.kind === "issue" ? entry.workItem.assigneeName : entry.workItem.leadName,
-              issueProjectName: entry.workItem.kind === "issue" ? entry.workItem.projectName : null,
-              workItemKind: entry.workItem.kind,
-              sessionId: entry.sessionId,
-              turnCount: entry.turnCount,
-              attemptNumber: entry.attemptNumber,
-              startedAt: entry.startedAt,
-              lastEventAt: entry.lastEventAt,
-              workspaceDir: entry.workspaceDir,
-              workflowId: id,
-            });
-          }
-        }
-        return new Response("Not Found", { status: 404 });
       }
 
       // Static file serving

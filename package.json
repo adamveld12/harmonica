@@ -17,7 +17,7 @@
   "scripts": {
     "start": "bun run src/index.ts",
     "dev": "concurrently -n server,ui -c blue,magenta \"bun run dev:server\" \"bun run dev:ui\"",
-    "dev:server": "bun --watch run src/index.ts --server.host localhost --server.port 6543 --workflows .agents/workflows --debug",
+    "dev:server": "bun --watch run src/index.ts --config-dir /tmp/.harmonica --server.host localhost --server.port 6543 --workflows .agents/workflows --workspace.repo_url=git@github.com:adamveld12/harmonica.git --debug",
     "dev:ui": "cd ui && bunx vite",
     "typecheck": "tsc --noEmit",
     "test": "bun test",

@@ -16,7 +16,6 @@ docs/
   references/         # Field-by-field API and config reference
 src/                  # Orchestrator source code (TypeScript/Bun)
 ui/                   # React dashboard frontend
-workflows/            # Legacy single-workflow location (may be removed)
 ```
 
 ## Documentation Model

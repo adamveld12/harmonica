@@ -5,18 +5,30 @@ import { logger } from "../observability/logger.ts";
 
 const engine = new Liquid({ strictVariables: false, strictFilters: false });
 
-export async function runHook(
+async function runHook(
   hookCommand: string,
   ctx: HookContext,
   timeoutMs: number
 ): Promise<void> {
-  const rendered = await engine.parseAndRender(hookCommand, {
+  const templateVars: Record<string, unknown> = {
     workspace_dir: ctx.workspaceDir,
-    issue_id: ctx.issueId,
-    issue_identifier: ctx.issueIdentifier,
-    session_id: ctx.sessionId ?? "",
+    attempt: ctx.attempt,
     repo_url: ctx.repoUrl ?? "",
-  });
+  };
+
+  if (ctx.workItem) {
+    templateVars.item = ctx.workItem;
+    templateVars.issue = ctx.workItem.kind === "issue" ? ctx.workItem : null;
+    templateVars.project = ctx.workItem.kind === "project" ? ctx.workItem : null;
+  }
+
+  if (hookCommand.includes("repo_url") && !ctx.repoUrl) {
+    logger.warn("hook references repo_url but it is not set", {
+      hook: hookCommand.slice(0, 60),
+    });
+  }
+
+  const rendered = await engine.parseAndRender(hookCommand, templateVars);
 
   logger.debug("running hook", { command: rendered.slice(0, 80), workspace: ctx.workspaceDir });
 
@@ -26,7 +38,6 @@ export async function runHook(
     HARM_ISSUE_IDENTIFIER: ctx.issueIdentifier,
     HARM_WORKSPACE_DIR: ctx.workspaceDir,
     HARM_SESSION_ID: ctx.sessionId ?? "",
-    HARM_REPO_URL: ctx.repoUrl ?? process.env.HARM_REPO_URL ?? "",
   };
 
   const proc = Bun.spawn(["sh", "-c", rendered], {
@@ -43,9 +54,10 @@ export async function runHook(
     }, timeoutMs)
   );
 
-  const completion = proc.exited.then(exitCode => {
+  const completion = proc.exited.then(async (exitCode) => {
     if (exitCode !== 0) {
-      throw new Error(`Hook exited with code ${exitCode}`);
+      const stderr = await new Response(proc.stderr).text();
+      throw new Error(`Hook exited with code ${exitCode}${stderr ? `: ${stderr.trim()}` : ""}`);
     }
   });
 

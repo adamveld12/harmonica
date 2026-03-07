@@ -15,7 +15,7 @@ import type { TrackerConfig } from "../config/schema.ts";
 
 const LINEAR_API = "https://api.linear.app/graphql";
 
-export async function linearGraphql<T>(
+async function linearGraphql<T>(
   apiKey: string,
   query: string,
   variables: Record<string, unknown> = {},
@@ -115,7 +115,7 @@ export async function fetchOneProjectNode(
 }
 
 export function matchesIssueFilters(node: LinearIssueNode, config: TrackerConfig): boolean {
-  const filterStates = config.filter_states ?? (config.filter_state ? [config.filter_state] : undefined);
+  const filterStates = config.filter_states;
   if (filterStates?.length && !filterStates.includes(node.state.name)) {
     logger.debug("issue filter rejected: state mismatch", {
       issue: node.identifier,

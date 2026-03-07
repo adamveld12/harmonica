@@ -125,7 +125,7 @@ export interface ConfigResponse {
   name?: string;
   description?: string;
   repo_url: string;
-  base_dir: string;
+  workspaces_dir: string;
   cleanup_on_start: boolean;
   cleanup_on_terminal: boolean;
 }
@@ -137,18 +137,3 @@ export interface WorkflowSummary {
   description?: string;
 }
 
-export interface MultiWorkflowSSEData {
-  workflows: Record<string, WorkflowSummary>;
-}
-
-export interface WorkflowListItem {
-  id: string;
-  runningCount: number;
-  retryCount: number;
-  isShuttingDown: boolean;
-  lastPollAt: number;
-  model: string;
-  maxConcurrency: number;
-  name?: string;
-  description?: string;
-}

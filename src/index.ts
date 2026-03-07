@@ -12,7 +12,7 @@ import { DEFAULTS } from "./config/defaults.ts";
 
 function parseArgs(args: string[]): {
   workflows?: string;
-  config?: string;
+  configDir?: string;
   serverPort?: number;
   serverHost?: string;
   workspaceRepoUrl?: string;
@@ -20,21 +20,26 @@ function parseArgs(args: string[]): {
   debug: boolean;
   help: boolean;
 } {
-  const result: { workflows?: string; config?: string; serverPort?: number; serverHost?: string; workspaceRepoUrl?: string; envFile?: string; debug: boolean; help: boolean } = {
+  const result: { workflows?: string; configDir?: string; serverPort?: number; serverHost?: string; workspaceRepoUrl?: string; envFile?: string; debug: boolean; help: boolean } = {
     debug: false,
     help: false,
   };
   for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
+    let arg = args[i];
+    let nextVal: string | undefined;
+    const eqIdx = arg.indexOf("=");
+    if (eqIdx !== -1) {
+      nextVal = arg.slice(eqIdx + 1);
+      arg = arg.slice(0, eqIdx);
+    }
     if (arg === "--help" || arg === "-h") result.help = true;
     else if (arg === "--debug") result.debug = true;
-    // Support both --workflows (new) and --workflow (legacy alias)
-    else if ((arg === "--workflows" || arg === "--workflow") && args[i + 1]) result.workflows = args[++i];
-    else if (arg === "--config" && args[i + 1]) result.config = args[++i];
-    else if (arg === "--server.port" && args[i + 1]) result.serverPort = parseInt(args[++i], 10);
-    else if (arg === "--server.host" && args[i + 1]) result.serverHost = args[++i];
-    else if (arg === "--workspace.repo_url" && args[i + 1]) result.workspaceRepoUrl = args[++i];
-    else if (arg === "--env-file" && args[i + 1]) result.envFile = args[++i];
+    else if (arg === "--workflows") { const v = nextVal ?? args[++i]; if (v) result.workflows = v; }
+    else if (arg === "--config-dir") { const v = nextVal ?? args[++i]; if (v) result.configDir = v; }
+    else if (arg === "--server.port") { const v = nextVal ?? args[++i]; if (v) result.serverPort = parseInt(v, 10); }
+    else if (arg === "--server.host") { const v = nextVal ?? args[++i]; if (v) result.serverHost = v; }
+    else if (arg === "--workspace.repo_url") { const v = nextVal ?? args[++i]; if (v) result.workspaceRepoUrl = v; }
+    else if (arg === "--env-file") { const v = nextVal ?? args[++i]; if (v) result.envFile = v; }
   }
   return result;
 }
@@ -66,36 +71,17 @@ const HELP = `
 Usage: harmonica [options]
 
 Options:
-  --workflows <path>         Path to a WORKFLOW.md file or directory of .md files
-                             (default: ./workflows/ if exists, else ./WORKFLOW.md)
-  --workflow <path>          Alias for --workflows (backward compat)
-  --config <path>            Path to separate YAML config file (single-file mode only)
+  --workflows <path>         Path to a directory of .md workflow files
+                             (default: ./workflows/)
+  --config-dir <path>        Config/data directory (env: HARM_CONFIG_DIR; default: ~/.harmonica)
+                             Contains harmonica.db and workspaces/
   --server.port <num>        HTTP dashboard port (env: HARM_SERVER_PORT)
   --server.host <host>       HTTP dashboard host (env: HARM_SERVER_HOST)
-  --workspace.repo_url <url> Repository URL for workspaces (env: HARM_REPO_URL)
+  --workspace.repo_url <url> Repository URL for workspaces
   --env-file <path>          Path to .env file (default: ./.env if present)
   --debug                    Enable debug logging
   --help, -h                 Show this help
-
-Environment:
-  HARM_CONFIG_DIR            Config/data directory (default: ~/.harmonica)
-                             Contains harmonica.db and workspaces/
-
-WORKFLOW.md format:
-  YAML frontmatter (between ---) contains config.
-  Body is a Liquid template for the agent prompt.
 `.trim();
-
-function resolveWorkflowsPath(arg?: string): string {
-  if (arg) return resolve(arg);
-  // Auto-detect: prefer ./workflows/ dir, then ./WORKFLOW.md
-  const dir = resolve(process.cwd(), "workflows");
-  try {
-    const stat = statSync(dir);
-    if (stat.isDirectory()) return dir;
-  } catch {}
-  return resolve(process.cwd(), "WORKFLOW.md");
-}
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
@@ -111,13 +97,19 @@ async function main() {
     await loadEnvFile(resolve(process.cwd(), ".env"), false);
   }
 
-  const workflowsPath = resolveWorkflowsPath(args.workflows);
+  const workflowsPath = args.workflows ? resolve(args.workflows) : resolve(process.cwd(), "workflows");
   logger.info("harmonica starting", { workflows: workflowsPath });
+  logger.info("resolved config", {
+    configDir: args.configDir ?? process.env.HARM_CONFIG_DIR ?? DEFAULTS.config_dir,
+    serverPort: args.serverPort ?? null,
+    workspaceRepoUrl: args.workspaceRepoUrl ?? null,
+    debug: args.debug,
+  });
 
   const serverPort = args.serverPort ?? (process.env.HARM_SERVER_PORT ? parseInt(process.env.HARM_SERVER_PORT, 10) : undefined);
   const serverHost = args.serverHost ?? process.env.HARM_SERVER_HOST;
 
-  const rawConfigDir = process.env.HARM_CONFIG_DIR ?? DEFAULTS.config_dir;
+  const rawConfigDir = args.configDir ?? process.env.HARM_CONFIG_DIR ?? DEFAULTS.config_dir;
   const configDir = resolve(expandHome(rawConfigDir));
   const workspacesDir = join(configDir, "workspaces");
   const dbPath = join(configDir, "harmonica.db");
@@ -139,24 +131,24 @@ async function main() {
     sensorManager.updateConfig(newConfig);
   });
 
-  const manager = new WorkflowManager(workspacesDir, db, sensorManager);
+  const manager = new WorkflowManager(workspacesDir, db, sensorManager, args.workspaceRepoUrl);
 
-  // Load workflow(s)
-  let isDir = false;
+  // Load workflows from directory
+  let stat;
   try {
-    const stat = statSync(workflowsPath);
-    isDir = stat.isDirectory();
+    stat = statSync(workflowsPath);
   } catch (err) {
     logger.error("workflows path not found", { path: workflowsPath, error: String(err) });
     process.exit(1);
   }
 
+  if (!stat.isDirectory()) {
+    logger.error("workflows path must be a directory", { path: workflowsPath });
+    process.exit(1);
+  }
+
   try {
-    if (isDir) {
-      await manager.loadDirectory(workflowsPath);
-    } else {
-      await manager.loadSingleFile(workflowsPath);
-    }
+    await manager.loadDirectory(workflowsPath);
   } catch (err) {
     logger.error("failed to load workflow(s)", { path: workflowsPath, error: String(err) });
     process.exit(1);

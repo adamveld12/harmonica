@@ -55,7 +55,7 @@ workspace:
   repo_url: ${HARM_REPO_URL}
 
 hooks:
-  after_create: git clone ${HARM_REPO_URL} .
+  after_create: git clone {{ repo_url }} .
   before_run: git fetch --quiet || true
   timeout_ms: 60000
 
@@ -106,10 +106,9 @@ Create a `.env` file in your project root (or export these in your shell):
 
 ```bash
 LINEAR_API_KEY=lin_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-HARM_REPO_URL=https://github.com/your-org/your-repo
 ```
 
-Replace the values with your actual Linear API key and the repository URL you want the agent to explore.
+Replace the value with your actual Linear API key.
 
 ## Step 4: Run
 

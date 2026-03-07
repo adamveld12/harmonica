@@ -1,4 +1,4 @@
-import type { OrchestratorState, WorkItem } from "../types.ts";
+import type { OrchestratorState } from "../types.ts";
 import { logger } from "../observability/logger.ts";
 
 export function detectStalls(
@@ -25,24 +25,4 @@ export function abortStalled(
     logger.warn("aborting stalled run", { issue_id: issueId, reason });
     entry.abortController.abort();
   }
-}
-
-export function reconcileTrackerStates(
-  state: OrchestratorState,
-  freshIssues: Map<string, WorkItem>,
-): string[] {
-  const aborted: string[] = [];
-  for (const [issueId, entry] of state.running) {
-    const fresh = freshIssues.get(issueId);
-    if (!fresh || fresh.state !== "active") {
-      const newState = fresh?.state ?? "not_found";
-      logger.info("aborting non-active run", {
-        issue_id: issueId,
-        new_state: newState,
-      });
-      entry.abortController.abort();
-      aborted.push(issueId);
-    }
-  }
-  return aborted;
 }

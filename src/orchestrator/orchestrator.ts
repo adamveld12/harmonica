@@ -38,6 +38,9 @@ import {
 } from "./reconciler.ts";
 import { logger } from "../observability/logger.ts";
 import type { WorkspaceManager } from "../execution/workspace.ts";
+import { runHooks } from "../execution/hooks.ts";
+import { runWorker } from "../execution/worker.ts";
+import { createLinearMcpServerConfig } from "../integration/linear-mcp-tool.ts";
 
 function getWorkItemExtra(item: WorkItem): Record<string, unknown> | undefined {
   if (item.kind !== "project") return undefined;
@@ -58,6 +61,7 @@ export class Orchestrator {
   private refreshSignal: (() => void) | null = null;
   private workflow: WorkflowConfig;
   private consecutivePollFailures = 0;
+  private pendingResults = new Set<Promise<void>>();
   onNotify?: (event: NotificationEvent) => void;
 
   constructor(
@@ -126,6 +130,7 @@ export class Orchestrator {
         e.promise.catch(() => {}),
       );
       await Promise.all(promises);
+      await Promise.all(this.pendingResults);
       await loopPromise.catch(() => {});
       logger.info("orchestrator stopped");
     };
@@ -175,7 +180,7 @@ export class Orchestrator {
     const freshMap = new Map(candidates.map((i) => [i.id, i]));
 
     // Reconcile running workers against actual tracker state (not filtered candidates).
-    // Dispatch filters (filter_state, filter_labels) must not abort workers — only terminal
+    // Dispatch filters (filter_states, filter_labels) must not abort workers — only terminal
     // state (or item not found) should abort a running worker.
     const reconcilePromises: Promise<void>[] = [];
     for (const [itemId, entry] of this.state.running) {
@@ -278,49 +283,70 @@ export class Orchestrator {
 
     addRunning(this.state, entry);
 
-    this.onNotify?.({
-      type: "agent_started",
-      issueIdentifier: item.identifier,
-      issueTitle: item.title,
-      issueUrl: item.url,
-      timestamp: Date.now(),
-    });
+    try {
+      this.onNotify?.({
+        type: "agent_started",
+        issueIdentifier: item.identifier,
+        issueTitle: item.title,
+        issueUrl: item.url,
+        timestamp: Date.now(),
+      });
+    } catch (err) {
+      logger.warn("notification handler failed", { item_id: item.id, error: String(err) });
+    }
+
+    const abortLaunch = async (hookName: string, hookErr: unknown) => {
+      logger.error(`${hookName} hook failed, aborting worker`, {
+        item_id: item.id,
+        error: String(hookErr),
+      });
+      removeRunning(this.state, item.id);
+      recordCompletion(this.state, item.id);
+      unregisterWorkspace(this.state, item.id);
+      try {
+        this.onNotify?.({
+          type: "agent_errored",
+          issueIdentifier: item.identifier,
+          issueTitle: item.title,
+          issueUrl: item.url,
+          timestamp: Date.now(),
+          error: `${hookName} hook failed: ${hookErr}`,
+        });
+      } catch (notifyErr) {
+        logger.warn("notification handler failed", { item_id: item.id, error: String(notifyErr) });
+      }
+    };
 
     try {
-      const { runHooks } = await import("../execution/hooks.ts");
       await runHooks("after_create", this.config.hooks, {
         issueId: item.id,
         issueIdentifier: item.identifier,
         workspaceDir,
         sessionId: null,
         repoUrl: this.config.workspace.repo_url,
+        workItem: item,
+        attempt: attemptNumber,
       });
     } catch (err) {
-      logger.warn("after_create hook failed", {
-        item_id: item.id,
-        error: String(err),
-      });
+      await abortLaunch("after_create", err);
+      return;
     }
 
     try {
-      const { runHooks } = await import("../execution/hooks.ts");
       await runHooks("before_run", this.config.hooks, {
         issueId: item.id,
         issueIdentifier: item.identifier,
         workspaceDir,
         sessionId: resumeSessionId,
         repoUrl: this.config.workspace.repo_url,
+        workItem: item,
+        attempt: attemptNumber,
       });
     } catch (err) {
-      logger.warn("before_run hook failed", {
-        item_id: item.id,
-        error: String(err),
-      });
+      await abortLaunch("before_run", err);
+      return;
     }
 
-    const { createLinearMcpServerConfig } = await import(
-      "../integration/linear-mcp-tool.ts"
-    );
     const apiKey = this.config.tracker.api_key ?? "";
     const mcpServers = () => ({
       linear: createLinearMcpServerConfig(apiKey),
@@ -337,7 +363,6 @@ export class Orchestrator {
       }) as any,
     });
 
-    const { runWorker } = await import("../execution/worker.ts");
     const workerPromise = runWorker({
       item,
       workspaceDir,
@@ -358,14 +383,16 @@ export class Orchestrator {
 
     workerPromise.then(resolveWorker, rejectWorker);
 
-    promise
+    const resultChain: Promise<void> = promise
       .then((result) => this.handleWorkerResult(result, attemptNumber))
       .catch((err) =>
         logger.error("worker threw unexpectedly", {
           item_id: item.id,
           error: String(err),
         }),
-      );
+      )
+      .finally(() => this.pendingResults.delete(resultChain));
+    this.pendingResults.add(resultChain);
   }
 
   private async handleWorkerResult(
@@ -418,43 +445,41 @@ export class Orchestrator {
     removeRunning(this.state, item.id);
     recordCompletion(this.state, item.id);
 
-    if (result.exitReason === "error") {
-      this.onNotify?.({
-        type: "agent_errored",
-        issueIdentifier: item.identifier,
-        issueTitle: item.title,
-        issueUrl: item.url,
-        timestamp: Date.now(),
-        error: result.error,
-      });
-    } else {
-      this.onNotify?.({
-        type: "agent_finished",
-        issueIdentifier: item.identifier,
-        issueTitle: item.title,
-        issueUrl: item.url,
-        timestamp: Date.now(),
-        exitReason: result.exitReason,
-        turnCount: result.turnCount,
-      });
+    try {
+      if (result.exitReason === "error") {
+        this.onNotify?.({
+          type: "agent_errored",
+          issueIdentifier: item.identifier,
+          issueTitle: item.title,
+          issueUrl: item.url,
+          timestamp: Date.now(),
+          error: result.error,
+        });
+      } else {
+        this.onNotify?.({
+          type: "agent_finished",
+          issueIdentifier: item.identifier,
+          issueTitle: item.title,
+          issueUrl: item.url,
+          timestamp: Date.now(),
+          exitReason: result.exitReason,
+          turnCount: result.turnCount,
+        });
+      }
+    } catch (err) {
+      logger.warn("notification handler failed", { item_id: item.id, error: String(err) });
     }
 
     if (workspaceDir) {
-      try {
-        const { runHooks } = await import("../execution/hooks.ts");
-        await runHooks("after_run", this.config.hooks, {
-          issueId: item.id,
-          issueIdentifier: item.identifier,
-          workspaceDir,
-          sessionId: result.sessionId,
-          repoUrl: this.config.workspace.repo_url,
-        });
-      } catch (err) {
-        logger.warn("after_run hook failed", {
-          item_id: item.id,
-          error: String(err),
-        });
-      }
+      await runHooks("after_run", this.config.hooks, {
+        issueId: item.id,
+        issueIdentifier: item.identifier,
+        workspaceDir,
+        sessionId: result.sessionId,
+        repoUrl: this.config.workspace.repo_url,
+        workItem: item,
+        attempt: attemptNumber,
+      });
     }
 
     const retryEntry = createRetryEntry(result, attemptNumber, this.config, workspaceDir);
@@ -471,27 +496,21 @@ export class Orchestrator {
       this.config.workspace.cleanup_on_terminal;
 
     if (shouldClean && workspaceDir) {
-      try {
-        const { runHooks } = await import("../execution/hooks.ts");
-        await runHooks("before_remove", this.config.hooks, {
-          issueId: item.id,
-          issueIdentifier: item.identifier,
-          workspaceDir,
-          sessionId: result.sessionId,
-          repoUrl: this.config.workspace.repo_url,
-        });
-        await this.workspaceManager.removeWorkspace(workspaceDir);
-        unregisterWorkspace(this.state, item.id);
-        logger.info("workspace removed", {
-          item_id: item.id,
-          dir: workspaceDir,
-        });
-      } catch (err) {
-        logger.warn("workspace cleanup failed", {
-          item_id: item.id,
-          error: String(err),
-        });
-      }
+      await runHooks("before_remove", this.config.hooks, {
+        issueId: item.id,
+        issueIdentifier: item.identifier,
+        workspaceDir,
+        sessionId: result.sessionId,
+        repoUrl: this.config.workspace.repo_url,
+        workItem: item,
+        attempt: attemptNumber,
+      });
+      await this.workspaceManager.removeWorkspace(workspaceDir);
+      unregisterWorkspace(this.state, item.id);
+      logger.info("workspace removed", {
+        item_id: item.id,
+        dir: workspaceDir,
+      });
     }
   }
 }

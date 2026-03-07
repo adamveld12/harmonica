@@ -14,7 +14,6 @@ Every workflow file is a Markdown document with YAML frontmatter. All configurat
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `workflow` | `string` | — | Identifier string (informational) |
 | `poll_interval_ms` | `number` | `30000` | How often to poll Linear for new work items |
 | `stall_timeout_ms` | `number` | `300000` | How long a worker can be idle before being killed (5 min default) |
 
@@ -27,8 +26,7 @@ Controls which Linear work items are dispatched to agents. Connection details (A
 | `type` | `"linear"` | Yes | Tracker type (only Linear is supported) |
 | `sensor` | `string` | Yes | Name of a sensor defined in `.agents/sensors.yaml` |
 | `filter_labels` | `string[]` | No | Require ALL labels to be present (AND logic) |
-| `filter_states` | `string[]` | No | Filter to issues in any of these state names (issues mode only); preferred form |
-| `filter_state` | `string` | No | Deprecated alias for `filter_states` with a single value; prefer `filter_states` |
+| `filter_states` | `string[]` | No | Filter to issues in any of these state names (issues mode only) |
 | `filter_project` | `string` | No | Exact project name match (issues mode only) |
 | `filter_assignees` | `string[]` | No | Filter to issues assigned to any of these Linear display names (OR logic). Overrides sensor-level `assignees` if set. Issues mode only. |
 | `terminal_states` | `string[]` | No | Override which state names cause the worker to exit as completed; any stateLabel change to a listed value triggers completion |
@@ -59,7 +57,6 @@ Controls where agent workspaces are created and managed.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `base_dir` | `string` | `"~/.harmonica/workspaces"` | Parent directory for all workspaces; `~` is expanded |
 | `repo_url` | `string` | Required | Git repository URL cloned by `after_create` hook |
 | `cleanup_on_start` | `boolean` | `true` | Remove stale workspaces at orchestrator startup |
 | `cleanup_on_terminal` | `boolean` | `true` | Remove workspace when worker exits terminal |
@@ -71,12 +68,14 @@ Shell commands run at workspace lifecycle events. Each hook runs inside the work
 | Field | Type | Description |
 |-------|------|-------------|
 | `after_create` | `string` | Runs after workspace directory is created, before first agent run |
-| `before_run` | `string` | Runs before each agent turn (including retries) |
-| `after_run` | `string` | Runs after each agent turn completes |
+| `before_run` | `string` | Runs before the agent worker starts (including on retries) |
+| `after_run` | `string` | Runs after the agent worker completes |
 | `before_remove` | `string` | Runs before workspace directory is deleted |
 | `timeout_ms` | `number` | Hook timeout in milliseconds (default: `60000`) |
 
 Hook strings support Liquid variables: `{{ workspace_dir }}`, `{{ issue_id }}`, etc.
+
+> See [Hooks Reference](./hooks.md) for complete hook documentation.
 
 ### policy
 
@@ -251,11 +250,10 @@ Set by Harmonica before running each hook:
 | `HARM_ISSUE_IDENTIFIER` | Human identifier, e.g. `ENG-42` or project slug |
 | `HARM_WORKSPACE_DIR` | Absolute path to the workspace directory |
 | `HARM_SESSION_ID` | Claude session ID (empty string in `after_create`) |
-| `HARM_REPO_URL` | Repository URL from `workspace.repo_url` |
 
 ```yaml
 hooks:
-  after_create: git clone ${HARM_REPO_URL} .
+  after_create: git clone {{ repo_url }} .
   before_run: |
     echo "Starting run for ${HARM_ISSUE_IDENTIFIER}" >> /tmp/harm.log
     git fetch --quiet || true
@@ -263,15 +261,7 @@ hooks:
 
 ### Liquid Variables (in hook strings)
 
-Hook strings also support a subset of Liquid variables:
-
-| Variable | Value |
-|----------|-------|
-| `{{ workspace_dir }}` | Absolute workspace path |
-| `{{ issue_id }}` | Work item UUID |
-| `{{ issue_identifier }}` | Human identifier |
-| `{{ session_id }}` | Claude session ID |
-| `{{ repo_url }}` | Repository URL |
+Hook strings support the same Liquid variables as prompt templates: `item`, `issue`, `project`, `workspace_dir`, and `attempt`. See [Hooks Reference](./hooks.md) for full details.
 
 ---
 
@@ -281,7 +271,6 @@ Use `${VAR}` or `$VAR` anywhere in YAML frontmatter values. Path fields addition
 
 ```yaml
 workspace:
-  base_dir: ~/my-workspaces          # ~ expands to $HOME
   repo_url: ${HARM_REPO_URL}
 agent:
   api_key: ${ANTHROPIC_API_KEY}      # only needed for auth_method: api_key

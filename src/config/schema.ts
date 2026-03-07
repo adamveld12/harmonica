@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const SensorSchema = z.object({
+const SensorSchema = z.object({
   type: z.literal("linear"),
   api_key: z.string(),
   mode: z.enum(["issues", "projects"]).default("issues"),
@@ -20,8 +20,7 @@ export const TrackerSchema = z
     type: z.literal("linear"),
     sensor: z.string(),
     filter_labels: z.array(z.string()).optional(),
-    filter_state: z.string().optional(),          // deprecated compat alias
-    filter_states: z.array(z.string()).optional(), // preferred: array of state names
+    filter_states: z.array(z.string()).optional(),
     filter_project: z.string().optional(),
     filter_assignees: z.array(z.string()).optional(),
     project_id: z.string().optional(),
@@ -49,11 +48,13 @@ export const AgentSchema = z
   })
   .default({});
 
-export const WorkspaceSchema = z.object({
-  repo_url: z.string(),
-  cleanup_on_start: z.boolean().default(true),
-  cleanup_on_terminal: z.boolean().default(true),
-});
+export const WorkspaceSchema = z
+  .object({
+    repo_url: z.string().optional(),
+    cleanup_on_start: z.boolean().default(true),
+    cleanup_on_terminal: z.boolean().default(true),
+  })
+  .default({});
 
 export const HooksSchema = z
   .object({
@@ -73,19 +74,19 @@ export const PolicySchema = z
   .default({});
 
 export const ConfigSchema = z.object({
-  workflow: z.string().optional(),
   poll_interval_ms: z.number().default(30_000),
   stall_timeout_ms: z.number().default(300_000),
   tracker: TrackerSchema,
   agent: AgentSchema,
-  claude: AgentSchema.optional(),
   workspace: WorkspaceSchema,
   hooks: HooksSchema,
   policy: PolicySchema,
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
-export type AgentConfig = z.infer<typeof AgentSchema>;
 export type TrackerConfig = z.infer<typeof TrackerSchema>;
-export type WorkspaceConfig = z.infer<typeof WorkspaceSchema>;
 export type HooksConfig = z.infer<typeof HooksSchema>;
+
+export function getEffectiveConcurrency(config: Config): number {
+  return config.policy.max_concurrency ?? config.agent.max_concurrency;
+}

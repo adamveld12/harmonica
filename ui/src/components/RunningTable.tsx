@@ -2,14 +2,11 @@ import type { RunningSnapshot } from "../types";
 import { IssueRow } from "./IssueRow";
 import { OutputLog } from "./OutputLog";
 import { stopWorker } from "../api";
+import { fmtTimestamp } from "../utils";
 
 interface Props {
   running: RunningSnapshot[];
   workflowId: string;
-}
-
-function fmt(ts: number): string {
-  return new Date(ts).toISOString();
 }
 
 export function RunningTable({ running, workflowId }: Props) {
@@ -36,8 +33,8 @@ export function RunningTable({ running, workflowId }: Props) {
                     <div><strong>Labels:</strong> {r.issueLabels.length ? r.issueLabels.join(", ") : "-"}</div>
                     <div><strong>Project:</strong> {r.issueProjectName ?? "-"}</div>
                     <div><strong>Workspace:</strong> {r.workspaceDir}</div>
-                    <div><strong>Started:</strong> {fmt(r.startedAt)}</div>
-                    <div><strong>Last Event:</strong> {fmt(r.lastEventAt)}</div>
+                    <div><strong>Started:</strong> {fmtTimestamp(r.startedAt)}</div>
+                    <div><strong>Last Event:</strong> {fmtTimestamp(r.lastEventAt)}</div>
                     <div><strong>Session:</strong> {r.sessionId ?? "-"}</div>
                     {r.prUrl && (
                       <div><strong>PR:</strong>{" "}
@@ -47,7 +44,7 @@ export function RunningTable({ running, workflowId }: Props) {
                       </div>
                     )}
                   </div>
-                  <OutputLog issueId={r.issueId} live={true} open={open} />
+                  <OutputLog issueId={r.issueId} workflowId={workflowId} live={true} open={open} />
                 </>
               )}
             </IssueRow>

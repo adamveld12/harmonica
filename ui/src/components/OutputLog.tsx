@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import type { OutputLine } from "../types";
-import { fetchLiveOutput, fetchCompletedOutput } from "../api";
+import { fetchWorkflowLiveOutput, fetchCompletedOutput } from "../api";
 
 interface Props {
   issueId: string;
+  workflowId: string;
   live: boolean;
   open: boolean;
 }
@@ -12,7 +13,7 @@ function fmt(ts: number): string {
   return new Date(ts).toISOString().slice(11, 19);
 }
 
-export function OutputLog({ issueId, live, open }: Props) {
+export function OutputLog({ issueId, workflowId, live, open }: Props) {
   const [lines, setLines] = useState<OutputLine[]>([]);
   const nextIndexRef = useRef(0);
   const logRef = useRef<HTMLDivElement>(null);
@@ -34,7 +35,7 @@ export function OutputLog({ issueId, live, open }: Props) {
     async function poll() {
       if (!active) return;
       try {
-        const data = await fetchLiveOutput(issueId, nextIndexRef.current);
+        const data = await fetchWorkflowLiveOutput(workflowId, issueId, nextIndexRef.current);
         if (data.lines.length > 0) {
           nextIndexRef.current = data.nextIndex;
           setLines(prev => [...prev, ...data.lines]);
@@ -45,7 +46,7 @@ export function OutputLog({ issueId, live, open }: Props) {
 
     poll();
     return () => { active = false; };
-  }, [issueId, live, open]);
+  }, [issueId, workflowId, live, open]);
 
   useEffect(() => {
     const el = logRef.current;

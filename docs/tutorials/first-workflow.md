@@ -64,7 +64,7 @@ tracker:
 
 - `type: linear` -- the tracker type
 - `sensor: linear-issues` -- references the sensor you created in `.agents/sensors.yaml`
-- `filter_states: ["In Progress"]` -- only process issues in any of these states (array form; the older `filter_state: "..."` single-string form still works as a deprecated alias)
+- `filter_states: ["In Progress"]` -- only process issues in any of these states
 - `terminal_states: ["Done", "Cancelled"]` -- states that cause the worker to exit as completed; any stateLabel change to one of these values triggers worker completion
 
 ### Frontmatter: `agent`
@@ -112,7 +112,6 @@ Add your repository URL to `.env`:
 
 ```bash
 LINEAR_API_KEY=lin_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-HARM_REPO_URL=https://github.com/your-org/your-repo
 ```
 
 ## Step 4: Add workspace hooks
@@ -137,7 +136,7 @@ workspace:
   repo_url: ${HARM_REPO_URL}
 
 hooks:
-  after_create: git clone ${HARM_REPO_URL} .
+  after_create: git clone {{ repo_url }} .
   before_run: git fetch --quiet || true
 ---
 ```
@@ -145,7 +144,7 @@ hooks:
 - `after_create` runs once when the workspace is first created. Here it clones your repo.
 - `before_run` runs before each agent session. Here it fetches the latest changes.
 
-Hooks have access to environment variables like `HARM_ISSUE_ID`, `HARM_ISSUE_IDENTIFIER`, `HARM_WORKSPACE_DIR`, and `HARM_REPO_URL`.
+Hooks have access to environment variables like `HARM_ISSUE_ID`, `HARM_ISSUE_IDENTIFIER`, and `HARM_WORKSPACE_DIR`, as well as Liquid variables like `{{ repo_url }}`.
 
 ## Step 5: Run
 

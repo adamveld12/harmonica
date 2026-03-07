@@ -1,9 +1,11 @@
 import type { CompletedSession } from "../types";
 import { IssueRow } from "./IssueRow";
 import { OutputLog } from "./OutputLog";
+import { fmtTimestamp } from "../utils";
 
 interface Props {
   completed: CompletedSession[];
+  workflowId: string;
 }
 
 function fmtDuration(ms: number): string {
@@ -15,11 +17,7 @@ function fmtDuration(ms: number): string {
   return `${h}h ${m % 60}m`;
 }
 
-function fmt(ts: number): string {
-  return new Date(ts).toISOString();
-}
-
-export function CompletedTable({ completed }: Props) {
+export function CompletedTable({ completed, workflowId }: Props) {
   return (
     <>
       <h2>Completed ({completed.length})</h2>
@@ -38,7 +36,7 @@ export function CompletedTable({ completed }: Props) {
                   <span className={`exit-${c.exitReason}`}>{c.exitReason}</span>
                   &nbsp;|&nbsp; {c.turnCount} turns
                   &nbsp;|&nbsp; {fmtDuration(c.completedAt - c.startedAt)}
-                  &nbsp;|&nbsp; {fmt(c.completedAt)}
+                  &nbsp;|&nbsp; {fmtTimestamp(c.completedAt)}
                 </>
               }
             >
@@ -61,7 +59,7 @@ export function CompletedTable({ completed }: Props) {
                       </div>
                     )}
                   </div>
-                  <OutputLog issueId={c.issueId} live={false} open={open} />
+                  <OutputLog issueId={c.issueId} workflowId={workflowId} live={false} open={open} />
                 </>
               )}
             </IssueRow>

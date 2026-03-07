@@ -23,7 +23,7 @@ export function ConfigPanel({ config }: Props) {
         <h3 className="config-section-header">Workspace</h3>
         <div className="config-grid">
           <div><strong>Repo URL:</strong> <a href={config.repo_url} className="issue-link" target="_blank" rel="noreferrer">{config.repo_url}</a></div>
-          <div><strong>Base Dir:</strong> {config.base_dir}</div>
+          <div><strong>Workspaces Dir:</strong> {config.workspaces_dir}</div>
           <div><strong>Cleanup on Start:</strong> {config.cleanup_on_start ? "yes" : "no"}</div>
           <div><strong>Cleanup on Terminal:</strong> {config.cleanup_on_terminal ? "yes" : "no"}</div>
         </div>
