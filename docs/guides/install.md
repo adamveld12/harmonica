@@ -23,8 +23,8 @@ bunx @vdhsn/harmonica --workflows .agents/workflows/
 ```bash
 git clone https://github.com/vdhsn/harmonica
 cd harmonica
-bun install
-bun run src/index.ts --workflows .agents/workflows/
+pnpm install
+bun run server/src/index.ts --workflows .agents/workflows/
 ```
 
 ## Verify the installation

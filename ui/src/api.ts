@@ -1,4 +1,4 @@
-import type { OutputLine, ConfigResponse } from "./types";
+import type { OutputLine, GlobalSettings } from "./types";
 
 export async function fetchCompletedOutput(issueId: string): Promise<OutputLine[]> {
   const r = await fetch(`/api/v1/completed/${issueId}/output`);
@@ -6,9 +6,9 @@ export async function fetchCompletedOutput(issueId: string): Promise<OutputLine[
   return r.json();
 }
 
-export async function fetchWorkflowConfig(id: string): Promise<ConfigResponse> {
-  const r = await fetch(`/api/v1/workflows/${id}/config`);
-  if (!r.ok) throw new Error(`workflow config fetch failed: ${r.status}`);
+export async function fetchGlobalSettings(): Promise<GlobalSettings | null> {
+  const r = await fetch("/api/v1/settings");
+  if (!r.ok) return null;
   return r.json();
 }
 

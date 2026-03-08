@@ -22,7 +22,7 @@ export function createRetryEntry(
     workItem: result.workItem,
     workspaceDir: workspaceDir ?? null,
     attemptNumber: nextAttempt,
-    retryAt: Date.now() + computeBackoff(nextAttempt, config.agent.max_retry_backoff_ms),
+    retryAt: Date.now() + computeBackoff(nextAttempt, config.agent.max_retry_backoff_s * 1000),
     reason: result.exitReason,
     lastSessionId: result.sessionId,
   };

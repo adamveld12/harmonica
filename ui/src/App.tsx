@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useSSE } from "./useSSE";
 import { useNotifications } from "./useNotifications";
-import { fetchWorkflowConfig } from "./api";
-import type { ConfigResponse } from "./types";
+import { fetchGlobalSettings } from "./api";
+import type { GlobalSettings } from "./types";
 import { ConfigPanel } from "./components/ConfigPanel";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { PendingTable } from "./components/PendingTable";
@@ -21,22 +21,15 @@ export function App() {
   // Derive active tab: use preferred if still valid, else fall back to first available
   const activeTab = preferredTab && workflowIds.includes(preferredTab) ? preferredTab : (workflowIds[0] ?? null);
 
-  const [configs, setConfigs] = useState<Record<string, ConfigResponse>>({});
+  const [settings, setSettings] = useState<GlobalSettings | null>(null);
 
-  // Fetch configs for any workflow we don't have yet
   useEffect(() => {
-    for (const id of workflowIds) {
-      if (!configs[id]) {
-        fetchWorkflowConfig(id)
-          .then((cfg) => setConfigs((prev) => ({ ...prev, [id]: cfg })))
-          .catch(() => {});
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workflowIds.join(",")]);
+    fetchGlobalSettings()
+      .then((s) => setSettings(s))
+      .catch(() => {});
+  }, []);
 
   const active = activeTab ? workflows[activeTab] : null;
-  const activeConfig = activeTab ? (configs[activeTab] ?? null) : null;
   const lastPoll = active?.snapshot ? new Date(active.snapshot.lastPollAt).toISOString() : "—";
 
   return (
@@ -57,6 +50,7 @@ export function App() {
         updatePrefs={updatePrefs}
         permissionState={permissionState}
         requestPermission={requestPermission}
+        settings={settings}
       />
 
       {workflowIds.length > 0 && (
@@ -94,7 +88,7 @@ export function App() {
           <div className="workflow-header">
             <h2>{active.name ?? activeTab}</h2>
             {active.description && <p className="workflow-description">{active.description}</p>}
-            <ConfigPanel config={activeConfig} />
+            <ConfigPanel config={active?.config ?? null} />
           </div>
           {(active.snapshot?.pending?.length ?? 0) > 0 && <PendingTable pending={active.snapshot!.pending} />}
           <RunningTable running={active.snapshot?.running ?? []} workflowId={activeTab} />

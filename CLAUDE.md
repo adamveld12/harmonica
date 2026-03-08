@@ -14,7 +14,7 @@ docs/
   tutorials/          # Lessons for beginners (step-by-step setup)
   guides/             # How-to guides for real-world problems
   references/         # Field-by-field API and config reference
-src/                  # Orchestrator source code (TypeScript/Bun)
+server/src/           # Orchestrator source code (TypeScript/Bun)
 ui/                   # React dashboard frontend
 ```
 
@@ -31,8 +31,22 @@ The `docs/` directory follows the [Divio documentation system](https://docs.divi
 **Package manager**: always use `pnpm` (not npm or bun for package management).
 
 **Build & publish process**:
-1. `bun run build` — compiles `src/` → `dist/` and builds `ui/dist/` (run automatically by `prepack`)
+
+1. `bun run build` — compiles `server/src/` → `server/dist/` and builds `ui/dist/` (run automatically by `prepack`)
 2. `pnpm pack --dry-run` — verify package contents before publishing
 3. `pnpm publish` — publishes `@vdhsn/harmonica` to npm (public, scoped)
 
 **Runtime**: Bun >= 1.0 is required to run the compiled output. `bun` must be in PATH.
+
+**Scripts**:
+
+| Script            | Description                                       |
+| ----------------- | ------------------------------------------------- |
+| `pnpm dev`        | Start server + UI dev server concurrently         |
+| `pnpm dev:server` | Server only with `--watch` auto-reload            |
+| `pnpm dev:ui`     | Vite dev server for the dashboard                 |
+| `pnpm build`      | Build server (`server/dist/`) and UI (`ui/dist/`) |
+| `pnpm typecheck`  | Run `tsc --noEmit` against `server/`              |
+| `pnpm lint`       | Lint server + UI source                           |
+| `pnpm format`     | Format all source files                           |
+| `pnpm test`       | Run tests                                         |

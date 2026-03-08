@@ -16,6 +16,6 @@ export function abortStalled(state: OrchestratorState, issueId: string, reason: 
   const entry = state.running.get(issueId);
   if (entry) {
     logger.warn("aborting stalled run", { issue_id: issueId, reason });
-    entry.abortController.abort();
+    entry.abortController.abort("stalled");
   }
 }

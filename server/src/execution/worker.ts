@@ -114,12 +114,12 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
 
     for (let turn = 1; turn <= maxTurns; turn++) {
       if (abortController.signal.aborted) {
-        return makeResult("aborted");
+        return makeResult(abortController.signal.reason === "stalled" ? "stalled" : "aborted");
       }
       onTurnStart(item.id, turn);
 
       const turnController = new AbortController();
-      const timeoutId = setTimeout(() => turnController.abort(), config.agent.turn_timeout_ms);
+      const timeoutId = setTimeout(() => turnController.abort(), config.agent.turn_timeout_s * 1000);
       abortController.signal.addEventListener("abort", () => turnController.abort(), { once: true });
 
       const currentPrompt = turn === 1 ? prompt : CONTINUATION_PROMPT;
@@ -192,12 +192,12 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
       }
 
       if (turnController.signal.aborted && !abortController.signal.aborted) {
-        logger.warn("turn timed out", { item_id: item.id, turn });
+        logger.warn("turn timed out", { item_id: item.id, turn, timeout_s: config.agent.turn_timeout_s });
         return makeResult("stalled", { turnCount: turn });
       }
 
       if (abortController.signal.aborted) {
-        return makeResult("aborted");
+        return makeResult(abortController.signal.reason === "stalled" ? "stalled" : "aborted");
       }
 
       try {
@@ -231,7 +231,12 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
   } catch (err: unknown) {
     const error = err as Error;
     if (error.name === "AbortError" || abortController.signal.aborted) {
-      return makeResult("aborted");
+      const reason = !abortController.signal.aborted
+        ? "stalled"
+        : abortController.signal.reason === "stalled"
+          ? "stalled"
+          : "aborted";
+      return makeResult(reason);
     }
     logger.error("worker error", { item_id: item.id, error: error.message });
     return makeResult("error", { error: error.message });

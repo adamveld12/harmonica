@@ -2,7 +2,7 @@
 import { resolve, join } from "path";
 import { statSync } from "fs";
 import { WorkflowManager } from "./orchestrator/workflow-manager.ts";
-import { startDashboardServer } from "./observability/server.ts";
+import { startDashboardServer, type GlobalSettings } from "./observability/server.ts";
 import { HarmonicaDB } from "./observability/db.ts";
 import { logger } from "./observability/logger.ts";
 import { loadSensors, watchSensors } from "./config/sensor-loader.ts";
@@ -181,10 +181,21 @@ async function main() {
     process.exit(1);
   }
 
+  const globalSettings: GlobalSettings = {
+    configDir,
+    workspacesDir,
+    dbPath,
+    serverPort,
+    serverHost,
+    workflowsPath,
+    repoUrlOverride: args.workspaceRepoUrl,
+    debug: args.debug,
+  };
+
   let server: { stop(): void } | null = null;
   if (serverPort) {
     try {
-      const dashServer = startDashboardServer(serverPort, manager, serverHost ?? "localhost", db);
+      const dashServer = startDashboardServer(serverPort, manager, serverHost ?? "localhost", db, globalSettings);
       server = dashServer;
       manager.setNotifyHandler((event) => dashServer.notify(event));
       logger.info("dashboard started", { port: serverPort, ...(serverHost ? { host: serverHost } : {}) });

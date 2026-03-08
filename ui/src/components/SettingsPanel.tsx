@@ -1,18 +1,59 @@
-import type { NotificationPreferences } from "../types";
+import type { NotificationPreferences, GlobalSettings } from "../types";
 
 interface Props {
   prefs: NotificationPreferences;
   updatePrefs: (patch: Partial<NotificationPreferences>) => void;
   permissionState: NotificationPermission;
   requestPermission: () => void;
+  settings: GlobalSettings | null;
 }
 
-export function SettingsPanel({ prefs, updatePrefs, permissionState, requestPermission }: Props) {
+export function SettingsPanel({ prefs, updatePrefs, permissionState, requestPermission, settings }: Props) {
   return (
     <details className="settings-panel">
       <summary>
         <span>Settings</span>
       </summary>
+
+      {settings && (
+        <>
+          <h3 className="config-section-header">Application</h3>
+          <div className="config-grid">
+            <div>
+              <strong>Config Dir:</strong> {settings.configDir}
+            </div>
+            <div>
+              <strong>Workspaces Dir:</strong> {settings.workspacesDir}
+            </div>
+            <div>
+              <strong>Database:</strong> {settings.dbPath}
+            </div>
+            <div>
+              <strong>Workflows Path:</strong> {settings.workflowsPath}
+            </div>
+            {settings.serverPort != null && (
+              <div>
+                <strong>Server Port:</strong> {settings.serverPort}
+              </div>
+            )}
+            {settings.serverHost && (
+              <div>
+                <strong>Server Host:</strong> {settings.serverHost}
+              </div>
+            )}
+            {settings.repoUrlOverride && (
+              <div>
+                <strong>Repo URL Override:</strong> {settings.repoUrlOverride}
+              </div>
+            )}
+            <div>
+              <strong>Debug:</strong> {settings.debug ? "on" : "off"}
+            </div>
+          </div>
+        </>
+      )}
+
+      <h3 className="config-section-header">Notifications</h3>
       <div className="config-grid">
         <div>
           <strong>Notification Permission:</strong>{" "}

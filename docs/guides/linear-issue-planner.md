@@ -20,7 +20,7 @@ linear-issues:
   type: linear
   api_key: ${LINEAR_API_KEY}
   mode: issues
-  poll_interval_ms: 15000
+  poll_interval_s: 15
   active_states:
     - "Backlog"
     - "In Progress"
@@ -57,7 +57,7 @@ workspace:
 hooks:
   after_create: git clone {{ repo_url }} .
   before_run: git fetch --quiet || true
-  timeout_ms: 60000
+  timeout_s: 60
 
 policy:
   max_concurrency: 3
@@ -113,7 +113,7 @@ Replace the value with your actual Linear API key.
 ## Step 4: Run
 
 ```bash
-bun run src/index.ts --workflows .agents/workflows/
+bun run server/src/index.ts --workflows .agents/workflows/
 ```
 
 Harmonica will start polling Linear and processing any matching issues.
@@ -133,7 +133,7 @@ Harmonica will start polling Linear and processing any matching issues.
 Add the dashboard for a visual overview:
 
 ```bash
-bun run src/index.ts --workflows .agents/workflows/ --server.port 7842
+bun run server/src/index.ts --workflows .agents/workflows/ --server.port 7842
 ```
 
 Open `http://localhost:7842` to see active agents, completed runs, and logs.

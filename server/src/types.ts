@@ -180,11 +180,11 @@ export interface CompletedSession {
 /** Reason a worker exited. */
 export type WorkerExitReason =
   | "completed" // agent indicated it finished
-  | "stalled" // lastEventAt exceeded stall_timeout_ms
+  | "stalled" // no events received for stall_timeout_s, or per-turn timeout
   | "max_turns" // reached agent.max_turns
   | "error" // unhandled error
   | "terminal" // issue transitioned to a terminal state mid-run
-  | "aborted"; // abortController.abort() called externally
+  | "aborted"; // manually cancelled, shutdown, or item removed from candidates
 
 /** Summary returned by a worker when it finishes. */
 export interface WorkerResult {

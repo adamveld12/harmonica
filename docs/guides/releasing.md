@@ -34,7 +34,7 @@ That's it. The workflow handles everything from here.
 ## What the workflow does
 
 1. Bumps `package.json` to the specified version
-2. Runs `bun run build` to compile `src/` → `dist/` and `ui/dist/`
+2. Runs `bun run build` to compile `server/src/` → `server/dist/` and `ui/dist/`
 3. Publishes `@vdhsn/harmonica` to npm via OIDC trusted publishing (no stored token needed)
 4. Commits the version bump as `release: v<version>` and pushes to `main`
 5. Creates and pushes a `v<version>` tag

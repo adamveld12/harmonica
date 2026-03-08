@@ -16,7 +16,7 @@ hooks:
   after_run: |
     cd {{ workspace_dir }} && git diff --stat
   before_remove: ""
-  timeout_ms: 60000
+  timeout_s: 60
 ```
 
 All hook fields are optional strings. An empty string or omitted field means no hook runs for that event.
@@ -38,12 +38,12 @@ Workspace created
                           └─ Workspace deleted
 ```
 
-| Hook | When | Use case |
-|------|------|----------|
-| `after_create` | After workspace directory is created, before the agent starts | Clone repo, install dependencies, initial setup |
-| `before_run` | Before the agent worker starts (including on retries) | Fetch latest, reset state, pull updates |
-| `after_run` | After the agent worker completes (any exit reason) | Push changes, post PR comments, send notifications |
-| `before_remove` | Before workspace directory is deleted | Archive logs, backup state |
+| Hook            | When                                                          | Use case                                           |
+| --------------- | ------------------------------------------------------------- | -------------------------------------------------- |
+| `after_create`  | After workspace directory is created, before the agent starts | Clone repo, install dependencies, initial setup    |
+| `before_run`    | Before the agent worker starts (including on retries)         | Fetch latest, reset state, pull updates            |
+| `after_run`     | After the agent worker completes (any exit reason)            | Push changes, post PR comments, send notifications |
+| `before_remove` | Before workspace directory is deleted                         | Archive logs, backup state                         |
 
 ### Retry behavior
 
@@ -59,16 +59,16 @@ before_run → Agent runs → after_run → [backoff] → before_run → Agent r
 
 **Hook failures are fatal.** A non-zero exit code or timeout aborts the current run:
 
-| Hook | On failure |
-|------|-----------|
-| `after_create` | Worker launch aborted. Workspace preserved for investigation. 30s cooldown before re-dispatch. |
-| `before_run` | Worker launch aborted. Workspace preserved. 30s cooldown before re-dispatch. |
-| `after_run` | Logged as error. Retry and workspace cleanup are skipped. |
-| `before_remove` | Logged as error. Workspace is NOT deleted. |
+| Hook            | On failure                                                                                     |
+| --------------- | ---------------------------------------------------------------------------------------------- |
+| `after_create`  | Worker launch aborted. Workspace preserved for investigation. 30s cooldown before re-dispatch. |
+| `before_run`    | Worker launch aborted. Workspace preserved. 30s cooldown before re-dispatch.                   |
+| `after_run`     | Logged as error. Retry and workspace cleanup are skipped.                                      |
+| `before_remove` | Logged as error. Workspace is NOT deleted.                                                     |
 
 ### Timeout
 
-Each hook has a maximum execution time controlled by `timeout_ms` (default: 60000ms / 1 minute). If a hook exceeds this, the process is killed and treated as a hook failure.
+Each hook has a maximum execution time controlled by `timeout_s` (default: 60s / 1 minute). If a hook exceeds this, the process is killed and treated as a hook failure.
 
 ---
 
@@ -76,12 +76,12 @@ Each hook has a maximum execution time controlled by `timeout_ms` (default: 6000
 
 Set by Harmonica before running each hook:
 
-| Variable | Value |
-|----------|-------|
-| `HARM_ISSUE_ID` | Work item UUID |
-| `HARM_ISSUE_IDENTIFIER` | Human identifier, e.g. `ENG-42` or project slug |
-| `HARM_WORKSPACE_DIR` | Absolute path to the workspace directory |
-| `HARM_SESSION_ID` | Claude session ID (empty string in `after_create`) |
+| Variable                | Value                                              |
+| ----------------------- | -------------------------------------------------- |
+| `HARM_ISSUE_ID`         | Work item UUID                                     |
+| `HARM_ISSUE_IDENTIFIER` | Human identifier, e.g. `ENG-42` or project slug    |
+| `HARM_WORKSPACE_DIR`    | Absolute path to the workspace directory           |
+| `HARM_SESSION_ID`       | Claude session ID (empty string in `after_create`) |
 
 ---
 
@@ -89,14 +89,14 @@ Set by Harmonica before running each hook:
 
 Hook strings support the same [Liquid](https://liquidjs.com/) variables as prompt templates (`strictVariables: false`):
 
-| Variable | Populated | Description |
-|----------|-----------|-------------|
-| `{{ item }}` | Always | Generic work item (issue or project) |
-| `{{ issue }}` | issues mode | Full issue object; `null` in projects mode |
-| `{{ project }}` | projects mode | Full project object; `null` in issues mode |
-| `{{ workspace_dir }}` | Always | Absolute workspace path |
-| `{{ attempt }}` | Always | Attempt number (starts at 1) |
-| `{{ repo_url }}` | Always | Repository URL from `workspace.repo_url` |
+| Variable              | Populated     | Description                                |
+| --------------------- | ------------- | ------------------------------------------ |
+| `{{ item }}`          | Always        | Generic work item (issue or project)       |
+| `{{ issue }}`         | issues mode   | Full issue object; `null` in projects mode |
+| `{{ project }}`       | projects mode | Full project object; `null` in issues mode |
+| `{{ workspace_dir }}` | Always        | Absolute workspace path                    |
+| `{{ attempt }}`       | Always        | Attempt number (starts at 1)               |
+| `{{ repo_url }}`      | Always        | Repository URL from `workspace.repo_url`   |
 
 See [Workflow Templating Reference](./workflow-templating.md#part-2-template-variables-reference) for complete field listings of `item`, `issue`, and `project`.
 

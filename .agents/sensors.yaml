@@ -2,7 +2,7 @@ linear-issues:
   type: linear
   api_key: ${LINEAR_API_KEY}
   mode: issues
-  poll_interval_ms: 15000
+  poll_interval_s: 15
   active_states:
     - "Backlog"
     - "On Deck"
@@ -13,6 +13,6 @@ linear-projects:
   type: linear
   api_key: ${LINEAR_API_KEY}
   mode: projects
-  poll_interval_ms: 30000
+  poll_interval_s: 30
   active_states:
     - "Planning"

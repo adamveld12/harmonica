@@ -43,31 +43,31 @@ linear-issues:
   type: linear
   api_key: ${LINEAR_API_KEY}
   mode: issues
-  poll_interval_ms: 30000
+  poll_interval_s: 30
   active_states:
     - "In Progress"
 ```
 
 Here's what each field does:
 
-| Field | Description |
-|-------|-------------|
-| `linear-issues` | The sensor name. Workflows reference this to connect. |
-| `type: linear` | The sensor type. Currently only `linear` is supported. |
-| `api_key` | Your Linear API key. `${LINEAR_API_KEY}` pulls from the environment. |
-| `mode: issues` | What to poll for. Use `issues` for individual issues or `projects` for Linear projects. |
-| `poll_interval_ms` | How often to poll Linear, in milliseconds. 30000 = every 30 seconds. |
-| `active_states` | Issue state names to fetch from Linear (fetch scope only). Harmonica will poll for issues in these states. |
+| Field             | Description                                                                                                |
+| ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| `linear-issues`   | The sensor name. Workflows reference this to connect.                                                      |
+| `type: linear`    | The sensor type. Currently only `linear` is supported.                                                     |
+| `api_key`         | Your Linear API key. `${LINEAR_API_KEY}` pulls from the environment.                                       |
+| `mode: issues`    | What to poll for. Use `issues` for individual issues or `projects` for Linear projects.                    |
+| `poll_interval_s` | How often to poll Linear, in seconds. 30 = every 30 seconds.                                               |
+| `active_states`   | Issue state names to fetch from Linear (fetch scope only). Harmonica will poll for issues in these states. |
 
 > **Note:** `terminal_states` is not configured on the sensor. Terminal state classification (which states mean "done, stop processing") is configured per-workflow in the tracker frontmatter via `tracker.terminal_states`.
 
 You can add more active states later. For example, to also track Backlog and On Deck issues:
 
 ```yaml
-  active_states:
-    - "Backlog"
-    - "On Deck"
-    - "In Progress"
+active_states:
+  - "Backlog"
+  - "On Deck"
+  - "In Progress"
 ```
 
 ## Step 5: Verify
@@ -75,7 +75,7 @@ You can add more active states later. For example, to also track Backlog and On 
 Run Harmonica briefly to confirm the sensor connects:
 
 ```bash
-bun run src/index.ts --workflows .agents/workflows/
+bun run server/src/index.ts --workflows .agents/workflows/
 ```
 
 You'll need at least one workflow file for the command to work (covered in the next tutorial). But if you see log output mentioning your sensor name polling Linear, the connection is working.

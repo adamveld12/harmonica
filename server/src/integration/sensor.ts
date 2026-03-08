@@ -43,7 +43,7 @@ export class LinearSensor {
     await this.poll();
     this.pollTimer = setInterval(() => {
       this.poll().catch((err) => logger.error("sensor poll interval error", { error: String(err) }));
-    }, this.config.poll_interval_ms);
+    }, this.config.poll_interval_s * 1000);
   }
 
   stop(): void {
@@ -85,7 +85,7 @@ export class LinearSensor {
 
   getCandidates(trackerConfig: TrackerConfig): WorkItem[] {
     const staleness = Date.now() - this.lastFetchAt;
-    if (this.lastFetchAt > 0 && staleness > this.config.poll_interval_ms * 3) {
+    if (this.lastFetchAt > 0 && staleness > this.config.poll_interval_s * 1000 * 3) {
       logger.warn("sensor cache is stale", { mode: this.config.mode, stale_ms: staleness });
     }
 
@@ -120,7 +120,7 @@ export class LinearSensor {
   }
 
   async refreshWorkItem(id: string, trackerConfig: TrackerConfig): Promise<WorkItem | null> {
-    const ttl = this.config.refresh_ttl_ms;
+    const ttl = this.config.refresh_ttl_s * 1000;
     const cached = this.refreshCache.get(id);
     if (cached && Date.now() - cached.fetchedAt < ttl) {
       const classificationConfig = {

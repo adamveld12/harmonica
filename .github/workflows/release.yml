@@ -24,15 +24,17 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Set version
+        working-directory: cli
         run: npm version ${{ inputs.version }} --no-git-tag-version
-      - run: bun run build
+      - run: pnpm run build
       - name: Publish to npm
+        working-directory: cli
         run: npm publish --access public
       - name: Commit, tag, and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json
+          git add cli/package.json
           git commit -m "release: v${{ inputs.version }}"
           git tag "v${{ inputs.version }}"
           git push origin main --tags

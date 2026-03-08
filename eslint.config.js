@@ -4,7 +4,7 @@ import eslintConfigPrettier from "eslint-config-prettier";
 import reactHooks from "eslint-plugin-react-hooks";
 
 export default [
-  { ignores: ["dist/", "ui/dist/", "node_modules/", ".agents/"] },
+  { ignores: ["server/dist/", "ui/dist/", "cli/", ".turbo/", "node_modules/", ".agents/"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   eslintConfigPrettier,

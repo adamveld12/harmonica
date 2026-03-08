@@ -1,0 +1,37 @@
+{
+  "name": "@vdhsn/harmonica",
+  "version": "0.2.0",
+  "description": "Symphony-spec orchestrator for Claude Code + Linear",
+  "type": "module",
+  "bin": {
+    "harmonica": "./dist/server/index.js"
+  },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "engines": {
+    "bun": ">=1.0"
+  },
+  "scripts": {
+    "build": "rm -rf dist && mkdir -p dist && cp -r ../server/dist dist/server && cp -r ../ui/dist dist/ui && cp ../README.md README.md",
+    "test": "bun test test/"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.69",
+    "liquidjs": "^10.0.0",
+    "yaml": "^2.0.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "harmonica-server": "workspace:*",
+    "harmonica-ui": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adamveld12/harmonica.git"
+  }
+}

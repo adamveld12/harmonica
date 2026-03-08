@@ -9,6 +9,7 @@ Workflows live in the `.agents/workflows/` directory. You can have as many as yo
 ## Prerequisites
 
 Complete the [Setting up your first sensor](../tutorials/first-sensor.md) tutorial first. You should have:
+
 - `.agents/sensors.yaml` with a `linear-issues` sensor
 - A `.env` file with `LINEAR_API_KEY`
 
@@ -93,16 +94,16 @@ workspace:
 
 The body after the frontmatter closing `---` is a [Liquid](https://liquidjs.com/) template. Available variables:
 
-| Variable | Description |
-|----------|-------------|
-| `{{ issue.identifier }}` | Linear issue ID, e.g. `ENG-123` |
-| `{{ issue.title }}` | Issue title |
-| `{{ issue.description }}` | Issue description body |
-| `{{ issue.state }}` | Current state name |
-| `{{ issue.url }}` | Link to the issue in Linear |
-| `{{ issue.labels }}` | Comma-separated label names |
-| `{{ workspace_dir }}` | Absolute path to the agent's workspace |
-| `{{ attempt }}` | Attempt number (starts at 1) |
+| Variable                  | Description                            |
+| ------------------------- | -------------------------------------- |
+| `{{ issue.identifier }}`  | Linear issue ID, e.g. `ENG-123`        |
+| `{{ issue.title }}`       | Issue title                            |
+| `{{ issue.description }}` | Issue description body                 |
+| `{{ issue.state }}`       | Current state name                     |
+| `{{ issue.url }}`         | Link to the issue in Linear            |
+| `{{ issue.labels }}`      | Comma-separated label names            |
+| `{{ workspace_dir }}`     | Absolute path to the agent's workspace |
+| `{{ attempt }}`           | Attempt number (starts at 1)           |
 
 See the [workflow templating reference](../references/workflow-templating.md) for the full list.
 
@@ -149,7 +150,7 @@ Hooks have access to environment variables like `HARM_ISSUE_ID`, `HARM_ISSUE_IDE
 ## Step 5: Run
 
 ```bash
-bun run src/index.ts --workflows .agents/workflows/
+bun run server/src/index.ts --workflows .agents/workflows/
 ```
 
 Harmonica starts, loads your sensor and workflow, and begins polling Linear.
@@ -166,10 +167,11 @@ Harmonica starts, loads your sensor and workflow, and begins polling Linear.
 Add `--server.port` to enable the built-in React dashboard:
 
 ```bash
-bun run src/index.ts --workflows .agents/workflows/ --server.port 7842
+bun run server/src/index.ts --workflows .agents/workflows/ --server.port 7842
 ```
 
 Open `http://localhost:7842` in your browser to see:
+
 - Active and completed agent runs
 - Agent logs and output
 - Workflow status

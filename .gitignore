@@ -2,6 +2,10 @@ node_modules
 *.local.*
 ui/dist/
 .agents/workflows/
-dist/
+server/dist/
+cli/dist/
+cli/README.md
 *.tgz
 .harmonica/*
+.turbo/
+bun.lockb

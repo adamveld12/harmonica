@@ -4,8 +4,8 @@ const SensorSchema = z.object({
   type: z.literal("linear"),
   api_key: z.string(),
   mode: z.enum(["issues", "projects"]).default("issues"),
-  poll_interval_ms: z.number().default(30000),
-  refresh_ttl_ms: z.number().default(5000),
+  poll_interval_s: z.number().default(30),
+  refresh_ttl_s: z.number().default(5),
   active_states: z.array(z.string()).optional(),
   assignees: z.array(z.string()).optional(),
 });
@@ -35,15 +35,23 @@ export const AgentSchema = z
   .object({
     model: z.string().default("claude-sonnet-4-20250514"),
     max_turns: z.number().default(50),
-    turn_timeout_ms: z.number().default(120_000),
-    max_retry_backoff_ms: z.number().default(300_000),
+    turn_timeout_s: z.number().default(600),
+    max_retry_backoff_s: z.number().default(300),
     max_concurrency: z.number().default(3),
     permission_mode: z.enum(["bypassPermissions", "default", "acceptEdits"]).default("bypassPermissions"),
     allowed_tools: z.array(z.string()).optional(),
     auth_method: z.enum(["api_key", "subscription"]).default("subscription"),
     api_key: z.string().optional(),
   })
-  .default({});
+  .default({
+    model: "claude-sonnet-4-20250514",
+    max_turns: 50,
+    turn_timeout_s: 600,
+    max_retry_backoff_s: 300,
+    max_concurrency: 3,
+    permission_mode: "bypassPermissions",
+    auth_method: "subscription",
+  });
 
 export const WorkspaceSchema = z
   .object({
@@ -51,7 +59,10 @@ export const WorkspaceSchema = z
     cleanup_on_start: z.boolean().default(true),
     cleanup_on_terminal: z.boolean().default(true),
   })
-  .default({});
+  .default({
+    cleanup_on_start: true,
+    cleanup_on_terminal: true,
+  });
 
 export const HooksSchema = z
   .object({
@@ -59,20 +70,24 @@ export const HooksSchema = z
     before_run: z.string().optional(),
     after_run: z.string().optional(),
     before_remove: z.string().optional(),
-    timeout_ms: z.number().default(60_000),
+    timeout_s: z.number().default(60),
   })
-  .default({});
+  .default({
+    timeout_s: 60,
+  });
 
 export const PolicySchema = z
   .object({
     max_concurrency: z.number().optional(),
     allow_multiple_per_issue: z.boolean().default(false),
   })
-  .default({});
+  .default({
+    allow_multiple_per_issue: false,
+  });
 
 export const ConfigSchema = z.object({
-  poll_interval_ms: z.number().default(30_000),
-  stall_timeout_ms: z.number().default(300_000),
+  poll_interval_s: z.number().default(30),
+  stall_timeout_s: z.number().default(300),
   tracker: TrackerSchema,
   agent: AgentSchema,
   workspace: WorkspaceSchema,

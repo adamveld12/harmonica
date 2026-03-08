@@ -1,36 +1,21 @@
 {
-  "name": "@vdhsn/harmonica",
-  "version": "0.3.0",
-  "description": "Symphony-spec orchestrator for Claude Code + Linear",
+  "name": "harmonica-workspace",
+  "private": true,
   "type": "module",
-  "bin": {
-    "harmonica": "./dist/index.js"
-  },
-  "files": [
-    "dist/",
-    "ui/dist/",
-    "README.md"
-  ],
-  "engines": {
-    "bun": ">=1.0"
-  },
   "packageManager": "pnpm@9.15.4",
   "scripts": {
-    "start": "bun run src/index.ts",
-    "dev": "concurrently -n server,ui -c blue,magenta \"bun run dev:server\" \"bun run dev:ui\"",
-    "dev:server": "bun --watch run src/index.ts --config-dir /tmp/.harmonica --server.host localhost --server.port 6543 --workflows .agents/workflows --workspace.repo_url=git@github.com:adamveld12/harmonica.git --debug",
-    "dev:ui": "cd ui && bunx vite",
-    "typecheck": "tsc --noEmit",
-    "test": "bun test",
-    "build:ui": "cd ui && bun install && bunx vite build",
-    "build:server": "bun build src/index.ts --target bun --packages external --splitting --outdir dist --format esm",
-    "build": "bun run build:server && bun run build:ui",
-    "prepack": "bun run build",
-    "prepare": "husky",
-    "format": "prettier --write 'src/**/*.ts' 'ui/src/**/*.{ts,tsx,css}'",
-    "format:check": "prettier --check 'src/**/*.ts' 'ui/src/**/*.{ts,tsx,css}'",
-    "lint": "eslint 'src/**/*.ts' 'ui/src/**/*.{ts,tsx}'",
-    "lint:fix": "eslint --fix 'src/**/*.ts' 'ui/src/**/*.{ts,tsx}'"
+    "start": "bun run server/src/index.ts",
+    "dev": "concurrently -n server,ui -c blue,magenta \"bun run dev:server --config-dir /tmp/.harmonica --workspace.repo_url=git@github.com:adamveld12/harmonica.git\" \"bun run dev:ui\"",
+    "dev:server": "bun --watch run server/src/index.ts --debug --server.host localhost --server.port 6543 --workflows ./.agents/workflows",
+    "dev:ui": "pnpm --filter harmonica-ui dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "lint": "eslint 'server/src/**/*.ts' 'ui/src/**/*.{ts,tsx}'",
+    "lint:fix": "eslint --fix 'server/src/**/*.ts' 'ui/src/**/*.{ts,tsx}'",
+    "format": "prettier --write 'server/src/**/*.ts' 'ui/src/**/*.{ts,tsx,css}'",
+    "format:check": "prettier --check 'server/src/**/*.ts' 'ui/src/**/*.{ts,tsx,css}'",
+    "prepare": "husky"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -41,18 +26,9 @@
       "prettier --write"
     ]
   },
-  "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.2.69",
-    "liquidjs": "^10.0.0",
-    "yaml": "^2.0.0",
-    "zod": "^3.0.0"
-  },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@types/bun": "latest",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^4.0.0",
     "concurrently": "^9.0.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
@@ -60,17 +36,8 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "^3.8.1",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "turbo": "^2",
     "typescript": "^5.0.0",
-    "typescript-eslint": "^8.50.0",
-    "vite": "^6.0.0"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/adamveld12/harmonica.git"
+    "typescript-eslint": "^8.50.0"
   }
 }

@@ -20,7 +20,7 @@ Workflows reference sensors by name in their frontmatter:
 ```yaml
 tracker:
   type: linear
-  sensor: my-sensor       # must match a key in sensors.yaml
+  sensor: my-sensor # must match a key in sensors.yaml
   filter_labels: ["agent"]
 ```
 
@@ -32,15 +32,15 @@ Harmonica watches `.agents/sensors.yaml` for changes. When the file is modified,
 
 Every sensor entry must conform to `SensorSchema`:
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `type` | `"linear"` | — | **Required.** Sensor type. Only `linear` is currently supported. |
-| `api_key` | `string` | — | **Required.** Linear API key. Supports `${VAR}` environment variable substitution. |
-| `mode` | `"issues"` \| `"projects"` | `"issues"` | Whether to poll for Linear issues or projects. |
-| `poll_interval_ms` | `number` | `30000` | Milliseconds between Linear API polls. |
-| `refresh_ttl_ms` | `number` | `5000` | Minimum milliseconds between forced refresh requests. |
-| `active_states` | `string[]` | — | State/status names to fetch from Linear. Controls fetch scope only — issues in these states are returned by the API. Completion classification (terminal vs. active) is configured per-workflow in the tracker section. If omitted, uses Linear defaults. |
-| `assignees` | `string[]` | — | Filter to issues assigned to any of these Linear display names. Inherited by workflows as the default for `filter_assignees` unless overridden. Issues mode only. |
+| Field             | Type                       | Default    | Description                                                                                                                                                                                                                                               |
+| ----------------- | -------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`            | `"linear"`                 | —          | **Required.** Sensor type. Only `linear` is currently supported.                                                                                                                                                                                          |
+| `api_key`         | `string`                   | —          | **Required.** Linear API key. Supports `${VAR}` environment variable substitution.                                                                                                                                                                        |
+| `mode`            | `"issues"` \| `"projects"` | `"issues"` | Whether to poll for Linear issues or projects.                                                                                                                                                                                                            |
+| `poll_interval_s` | `number`                   | `30`       | Seconds between Linear API polls.                                                                                                                                                                                                                         |
+| `refresh_ttl_s`   | `number`                   | `5`        | Minimum seconds between forced refresh requests.                                                                                                                                                                                                          |
+| `active_states`   | `string[]`                 | —          | State/status names to fetch from Linear. Controls fetch scope only — issues in these states are returned by the API. Completion classification (terminal vs. active) is configured per-workflow in the tracker section. If omitted, uses Linear defaults. |
+| `assignees`       | `string[]`                 | —          | Filter to issues assigned to any of these Linear display names. Inherited by workflows as the default for `filter_assignees` unless overridden. Issues mode only.                                                                                         |
 
 ## Example: Multiple Sensors
 
@@ -51,7 +51,7 @@ linear-issues:
   type: linear
   api_key: ${LINEAR_API_KEY}
   mode: issues
-  poll_interval_ms: 15000
+  poll_interval_s: 15
   active_states: ["Backlog", "On Deck", "In Progress", "In Review"]
   assignees:
     - "Adam Veldhousen"
@@ -60,7 +60,7 @@ linear-projects:
   type: linear
   api_key: ${LINEAR_API_KEY}
   mode: projects
-  poll_interval_ms: 30000
+  poll_interval_s: 30
   active_states: ["Planning"]
 ```
 

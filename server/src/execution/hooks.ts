@@ -46,7 +46,7 @@ async function runHook(hookCommand: string, ctx: HookContext, timeoutMs: number)
   const timeout = new Promise<never>((_, reject) =>
     setTimeout(() => {
       proc.kill();
-      reject(new Error(`Hook timed out after ${timeoutMs}ms`));
+      reject(new Error(`Hook timed out after ${timeoutMs / 1000}s`));
     }, timeoutMs),
   );
 
@@ -65,6 +65,6 @@ export async function runHooks(hookName: HookName, hooksConfig: HooksConfig, ctx
   if (!command) return;
 
   logger.info(`running ${hookName} hook`, { issue_id: ctx.issueId });
-  await runHook(command, ctx, hooksConfig.timeout_ms);
+  await runHook(command, ctx, hooksConfig.timeout_s * 1000);
   logger.info(`${hookName} hook completed`, { issue_id: ctx.issueId });
 }

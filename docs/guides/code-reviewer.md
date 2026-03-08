@@ -21,7 +21,7 @@ linear-issues:
   type: linear
   api_key: ${LINEAR_API_KEY}
   mode: issues
-  poll_interval_ms: 15000
+  poll_interval_s: 15
   active_states:
     - "Backlog"
     - "In Progress"
@@ -35,7 +35,7 @@ linear-reviews:
   type: linear
   api_key: ${LINEAR_API_KEY}
   mode: issues
-  poll_interval_ms: 15000
+  poll_interval_s: 15
   active_states:
     - "In Review"
 ```
@@ -76,7 +76,7 @@ hooks:
     if [ -n "$PR_BRANCH" ]; then
       git checkout "$PR_BRANCH" && git pull --quiet
     fi
-  timeout_ms: 60000
+  timeout_s: 60
 
 policy:
   max_concurrency: 2
@@ -105,15 +105,19 @@ Attempt: {{ attempt }}
    - If a comment is unclear or you disagree, leave a reply on the PR explaining your reasoning using `gh pr comment`
 
 4. **Commit your changes.** Make focused commits with descriptive messages that reference the review feedback:
-   ```
-   git add -A
-   git commit -m "address review: <summary of change>"
-   ```
+```
+
+git add -A
+git commit -m "address review: <summary of change>"
+
+```
 
 5. **Push.** Push your changes to the PR branch:
-   ```
-   git push
-   ```
+```
+
+git push
+
+```
 
 6. **Clean up.** Use the Linear MCP tool to remove the "!review" label from issue {{ issue.id }}.
 
@@ -137,7 +141,7 @@ The `gh` CLI must already be authenticated (`gh auth login`).
 ## Step 4: Run
 
 ```bash
-bun run src/index.ts --workflows .agents/workflows/
+bun run server/src/index.ts --workflows .agents/workflows/
 ```
 
 ## Step 5: Test and trigger

@@ -114,25 +114,65 @@ export interface NotificationPreferences {
   agent_errored: boolean;
 }
 
-export interface ConfigResponse {
-  model: string;
-  max_turns: number;
-  max_concurrency: number;
-  permission_mode: string;
-  auth_method: string;
-  poll_interval_ms: number;
-  stall_timeout_ms: number;
-  name?: string;
-  description?: string;
-  repo_url: string;
-  workspaces_dir: string;
-  cleanup_on_start: boolean;
-  cleanup_on_terminal: boolean;
+export interface WorkflowConfig {
+  poll_interval_s: number;
+  stall_timeout_s: number;
+  tracker: {
+    type: string;
+    sensor: string;
+    filter_labels?: string[];
+    filter_states?: string[];
+    filter_project?: string;
+    filter_assignees?: string[];
+    project_id?: string;
+    project_name?: string;
+    mode?: string;
+    active_states?: string[];
+    terminal_states?: string[];
+  };
+  agent: {
+    model: string;
+    max_turns: number;
+    turn_timeout_s: number;
+    max_retry_backoff_s: number;
+    max_concurrency: number;
+    permission_mode: string;
+    allowed_tools?: string[];
+    auth_method: string;
+  };
+  workspace: {
+    repo_url?: string;
+    cleanup_on_start: boolean;
+    cleanup_on_terminal: boolean;
+  };
+  hooks: {
+    after_create?: string;
+    before_run?: string;
+    after_run?: string;
+    before_remove?: string;
+    timeout_s: number;
+  };
+  policy: {
+    max_concurrency?: number;
+    allow_multiple_per_issue: boolean;
+  };
+}
+
+export interface GlobalSettings {
+  configDir: string;
+  workspacesDir: string;
+  dbPath: string;
+  serverPort?: number;
+  serverHost?: string;
+  workflowsPath: string;
+  repoUrlOverride?: string;
+  debug: boolean;
 }
 
 export interface WorkflowSummary {
   snapshot: StateSnapshot;
   completed: CompletedSession[];
+  config?: WorkflowConfig;
   name?: string;
   description?: string;
 }

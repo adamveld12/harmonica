@@ -108,7 +108,7 @@ export class Orchestrator {
     const loopPromise = (async () => {
       while (running && !this.state.isShuttingDown) {
         await this.tick();
-        await this.sleep(this.config.poll_interval_ms);
+        await this.sleep(this.config.poll_interval_s * 1000);
       }
     })();
 
@@ -154,7 +154,7 @@ export class Orchestrator {
       logger.info("polled tracker", { candidate_count: candidates.length });
     } catch (err) {
       this.consecutivePollFailures++;
-      const backoff = Math.min(this.config.poll_interval_ms * Math.pow(2, this.consecutivePollFailures), 300_000);
+      const backoff = Math.min(this.config.poll_interval_s * 1000 * Math.pow(2, this.consecutivePollFailures), 300_000);
       logger.error("tracker poll failed", {
         error: String(err),
         consecutive_failures: this.consecutivePollFailures,
@@ -164,7 +164,7 @@ export class Orchestrator {
       return;
     }
 
-    const stalledIds = detectStalls(this.state, this.config.stall_timeout_ms);
+    const stalledIds = detectStalls(this.state, this.config.stall_timeout_s * 1000);
     for (const id of stalledIds) {
       abortStalled(this.state, id, "stall_timeout");
     }

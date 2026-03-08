@@ -12,26 +12,26 @@ Every workflow file is a Markdown document with YAML frontmatter. All configurat
 
 ### Top-Level Fields
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `poll_interval_ms` | `number` | `30000` | How often to poll Linear for new work items |
-| `stall_timeout_ms` | `number` | `300000` | How long a worker can be idle before being killed (5 min default) |
+| Field             | Type     | Default | Description                                                       |
+| ----------------- | -------- | ------- | ----------------------------------------------------------------- |
+| `poll_interval_s` | `number` | `30`    | How often to poll Linear for new work items                       |
+| `stall_timeout_s` | `number` | `300`   | How long a worker can be idle before being killed (5 min default) |
 
 ### tracker
 
 Controls which Linear work items are dispatched to agents. Connection details (API key, mode, state config) come from the referenced sensor.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `type` | `"linear"` | Yes | Tracker type (only Linear is supported) |
-| `sensor` | `string` | Yes | Name of a sensor defined in `.agents/sensors.yaml` |
-| `filter_labels` | `string[]` | No | Require ALL labels to be present (AND logic) |
-| `filter_states` | `string[]` | No | Filter to issues in any of these state names (issues mode only) |
-| `filter_project` | `string` | No | Exact project name match (issues mode only) |
-| `filter_assignees` | `string[]` | No | Filter to issues assigned to any of these Linear display names (OR logic). Overrides sensor-level `assignees` if set. Issues mode only. |
-| `terminal_states` | `string[]` | No | Override which state names cause the worker to exit as completed; any stateLabel change to a listed value triggers completion |
-| `project_id` | `string` | No | Scope to a single project by UUID (projects mode) |
-| `project_name` | `string` | No | Scope to a single project by name, exact match (projects mode) |
+| Field              | Type       | Required | Description                                                                                                                             |
+| ------------------ | ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`             | `"linear"` | Yes      | Tracker type (only Linear is supported)                                                                                                 |
+| `sensor`           | `string`   | Yes      | Name of a sensor defined in `.agents/sensors.yaml`                                                                                      |
+| `filter_labels`    | `string[]` | No       | Require ALL labels to be present (AND logic)                                                                                            |
+| `filter_states`    | `string[]` | No       | Filter to issues in any of these state names (issues mode only)                                                                         |
+| `filter_project`   | `string`   | No       | Exact project name match (issues mode only)                                                                                             |
+| `filter_assignees` | `string[]` | No       | Filter to issues assigned to any of these Linear display names (OR logic). Overrides sensor-level `assignees` if set. Issues mode only. |
+| `terminal_states`  | `string[]` | No       | Override which state names cause the worker to exit as completed; any stateLabel change to a listed value triggers completion           |
+| `project_id`       | `string`   | No       | Scope to a single project by UUID (projects mode)                                                                                       |
+| `project_name`     | `string`   | No       | Scope to a single project by name, exact match (projects mode)                                                                          |
 
 > **Note:** `api_key` and `mode` are populated at runtime from the referenced sensor. `terminal_states` can be set per-workflow in the tracker section to override sensor defaults.
 
@@ -39,39 +39,39 @@ Controls which Linear work items are dispatched to agents. Connection details (A
 
 Controls the Claude Code agent session.
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `model` | `string` | `"claude-sonnet-4-20250514"` | Claude model ID |
-| `max_turns` | `number` | `50` | Maximum agent turns before forced exit |
-| `turn_timeout_ms` | `number` | `120000` | Milliseconds per turn before considered stalled |
-| `max_retry_backoff_ms` | `number` | `300000` | Maximum retry delay (5 min) |
-| `max_concurrency` | `number` | `3` | Maximum parallel workers |
-| `permission_mode` | `"bypassPermissions"` \| `"default"` \| `"acceptEdits"` | `"bypassPermissions"` | Agent tool permission mode |
-| `allowed_tools` | `string[]` | — | Whitelist of tool names; omit to allow all tools |
-| `auth_method` | `"api_key"` \| `"subscription"` | `"subscription"` | How to authenticate with Anthropic |
-| `api_key` | `string` | — | Anthropic API key; only needed when `auth_method: api_key` |
+| Field                 | Type                                                    | Default                      | Description                                                |
+| --------------------- | ------------------------------------------------------- | ---------------------------- | ---------------------------------------------------------- |
+| `model`               | `string`                                                | `"claude-sonnet-4-20250514"` | Claude model ID                                            |
+| `max_turns`           | `number`                                                | `50`                         | Maximum agent turns before forced exit                     |
+| `turn_timeout_s`      | `number`                                                | `600`                        | Seconds per turn before considered stalled                 |
+| `max_retry_backoff_s` | `number`                                                | `300`                        | Maximum retry delay (5 min)                                |
+| `max_concurrency`     | `number`                                                | `3`                          | Maximum parallel workers                                   |
+| `permission_mode`     | `"bypassPermissions"` \| `"default"` \| `"acceptEdits"` | `"bypassPermissions"`        | Agent tool permission mode                                 |
+| `allowed_tools`       | `string[]`                                              | —                            | Whitelist of tool names; omit to allow all tools           |
+| `auth_method`         | `"api_key"` \| `"subscription"`                         | `"subscription"`             | How to authenticate with Anthropic                         |
+| `api_key`             | `string`                                                | —                            | Anthropic API key; only needed when `auth_method: api_key` |
 
 ### workspace
 
 Controls where agent workspaces are created and managed.
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `repo_url` | `string` | Required | Git repository URL cloned by `after_create` hook |
-| `cleanup_on_start` | `boolean` | `true` | Remove stale workspaces at orchestrator startup |
-| `cleanup_on_terminal` | `boolean` | `true` | Remove workspace when worker exits terminal |
+| Field                 | Type      | Default  | Description                                      |
+| --------------------- | --------- | -------- | ------------------------------------------------ |
+| `repo_url`            | `string`  | Required | Git repository URL cloned by `after_create` hook |
+| `cleanup_on_start`    | `boolean` | `true`   | Remove stale workspaces at orchestrator startup  |
+| `cleanup_on_terminal` | `boolean` | `true`   | Remove workspace when worker exits terminal      |
 
 ### hooks
 
 Shell commands run at workspace lifecycle events. Each hook runs inside the workspace directory.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `after_create` | `string` | Runs after workspace directory is created, before first agent run |
-| `before_run` | `string` | Runs before the agent worker starts (including on retries) |
-| `after_run` | `string` | Runs after the agent worker completes |
-| `before_remove` | `string` | Runs before workspace directory is deleted |
-| `timeout_ms` | `number` | Hook timeout in milliseconds (default: `60000`) |
+| Field           | Type     | Description                                                       |
+| --------------- | -------- | ----------------------------------------------------------------- |
+| `after_create`  | `string` | Runs after workspace directory is created, before first agent run |
+| `before_run`    | `string` | Runs before the agent worker starts (including on retries)        |
+| `after_run`     | `string` | Runs after the agent worker completes                             |
+| `before_remove` | `string` | Runs before workspace directory is deleted                        |
+| `timeout_s`     | `number` | Hook timeout in seconds (default: `60`)                           |
 
 Hook strings support Liquid variables: `{{ workspace_dir }}`, `{{ issue_id }}`, etc.
 
@@ -79,9 +79,9 @@ Hook strings support Liquid variables: `{{ workspace_dir }}`, `{{ issue_id }}`, 
 
 ### policy
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `max_concurrency` | `number` | — | Overrides `agent.max_concurrency` if set |
+| Field                      | Type      | Default | Description                                             |
+| -------------------------- | --------- | ------- | ------------------------------------------------------- |
+| `max_concurrency`          | `number`  | —       | Overrides `agent.max_concurrency` if set                |
 | `allow_multiple_per_issue` | `boolean` | `false` | Allow more than one worker per work item simultaneously |
 
 ---
@@ -94,80 +94,80 @@ The workflow body is a [Liquid](https://liquidjs.com/) template rendered into th
 
 Generic alias for the current work item, available in both issues and projects mode.
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `{{ item.kind }}` | `string` | `"issue"` or `"project"` |
-| `{{ item.id }}` | `string` | UUID |
-| `{{ item.identifier }}` | `string` | Human identifier, e.g. `ENG-42` or project slug |
-| `{{ item.title }}` | `string` | Display name |
-| `{{ item.state }}` | `string` | `"active"`, `"terminal"`, or `"non_active"` |
-| `{{ item.stateLabel }}` | `string` | Raw Linear state/status name |
-| `{{ item.labels }}` | `string[]` | Array of label name strings |
-| `{{ item.url }}` | `string` | Linear URL |
-| `{{ item.createdAt }}` | `string` | ISO timestamp |
-| `{{ item.updatedAt }}` | `string` | ISO timestamp |
+| Variable                | Type       | Description                                     |
+| ----------------------- | ---------- | ----------------------------------------------- |
+| `{{ item.kind }}`       | `string`   | `"issue"` or `"project"`                        |
+| `{{ item.id }}`         | `string`   | UUID                                            |
+| `{{ item.identifier }}` | `string`   | Human identifier, e.g. `ENG-42` or project slug |
+| `{{ item.title }}`      | `string`   | Display name                                    |
+| `{{ item.state }}`      | `string`   | `"active"`, `"terminal"`, or `"non_active"`     |
+| `{{ item.stateLabel }}` | `string`   | Raw Linear state/status name                    |
+| `{{ item.labels }}`     | `string[]` | Array of label name strings                     |
+| `{{ item.url }}`        | `string`   | Linear URL                                      |
+| `{{ item.createdAt }}`  | `string`   | ISO timestamp                                   |
+| `{{ item.updatedAt }}`  | `string`   | ISO timestamp                                   |
 
 ### `issue` — populated in `mode: issues`
 
 All fields from `NormalizedIssue`. Null/empty in projects mode.
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `{{ issue.id }}` | `string` | UUID |
-| `{{ issue.identifier }}` | `string` | e.g. `ENG-42` |
-| `{{ issue.title }}` | `string` | Issue title |
-| `{{ issue.description }}` | `string \| null` | Issue description |
-| `{{ issue.state }}` | `string` | `"active"`, `"terminal"`, or `"non_active"` |
-| `{{ issue.stateLabel }}` | `string` | Raw Linear state name |
-| `{{ issue.labels }}` | `string[]` | Array of label name strings |
-| `{{ issue.assigneeId }}` | `string \| null` | Assignee UUID |
-| `{{ issue.assigneeName }}` | `string \| null` | Assignee display name |
-| `{{ issue.projectName }}` | `string \| null` | Parent project name |
-| `{{ issue.url }}` | `string` | Linear URL |
-| `{{ issue.createdAt }}` | `string` | ISO timestamp |
-| `{{ issue.updatedAt }}` | `string` | ISO timestamp |
+| Variable                   | Type             | Description                                 |
+| -------------------------- | ---------------- | ------------------------------------------- |
+| `{{ issue.id }}`           | `string`         | UUID                                        |
+| `{{ issue.identifier }}`   | `string`         | e.g. `ENG-42`                               |
+| `{{ issue.title }}`        | `string`         | Issue title                                 |
+| `{{ issue.description }}`  | `string \| null` | Issue description                           |
+| `{{ issue.state }}`        | `string`         | `"active"`, `"terminal"`, or `"non_active"` |
+| `{{ issue.stateLabel }}`   | `string`         | Raw Linear state name                       |
+| `{{ issue.labels }}`       | `string[]`       | Array of label name strings                 |
+| `{{ issue.assigneeId }}`   | `string \| null` | Assignee UUID                               |
+| `{{ issue.assigneeName }}` | `string \| null` | Assignee display name                       |
+| `{{ issue.projectName }}`  | `string \| null` | Parent project name                         |
+| `{{ issue.url }}`          | `string`         | Linear URL                                  |
+| `{{ issue.createdAt }}`    | `string`         | ISO timestamp                               |
+| `{{ issue.updatedAt }}`    | `string`         | ISO timestamp                               |
 
 ### `project` — populated in `mode: projects`
 
 All fields from `NormalizedProject`. Null/empty in issues mode.
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `{{ project.id }}` | `string` | UUID |
-| `{{ project.identifier }}` | `string` | Project slug |
-| `{{ project.title }}` | `string` | Project name |
-| `{{ project.description }}` | `string \| null` | Project description |
-| `{{ project.state }}` | `string` | `"active"`, `"terminal"`, or `"non_active"` |
-| `{{ project.stateLabel }}` | `string` | Raw status name |
-| `{{ project.labels }}` | `string[]` | Array of label name strings |
-| `{{ project.status }}` | `string` | Raw Linear status, e.g. `"started"` |
-| `{{ project.health }}` | `string \| null` | `"onTrack"`, `"atRisk"`, `"offTrack"`, or null |
-| `{{ project.leadName }}` | `string \| null` | Lead's display name |
-| `{{ project.memberCount }}` | `number` | Number of project members |
-| `{{ project.milestones }}` | `array` | Array of milestone objects (see below) |
-| `{{ project.startDate }}` | `string \| null` | ISO date string |
-| `{{ project.targetDate }}` | `string \| null` | ISO date string |
-| `{{ project.progress }}` | `number` | Integer 0-100 |
-| `{{ project.url }}` | `string` | Linear URL |
-| `{{ project.createdAt }}` | `string` | ISO timestamp |
-| `{{ project.updatedAt }}` | `string` | ISO timestamp |
+| Variable                    | Type             | Description                                    |
+| --------------------------- | ---------------- | ---------------------------------------------- |
+| `{{ project.id }}`          | `string`         | UUID                                           |
+| `{{ project.identifier }}`  | `string`         | Project slug                                   |
+| `{{ project.title }}`       | `string`         | Project name                                   |
+| `{{ project.description }}` | `string \| null` | Project description                            |
+| `{{ project.state }}`       | `string`         | `"active"`, `"terminal"`, or `"non_active"`    |
+| `{{ project.stateLabel }}`  | `string`         | Raw status name                                |
+| `{{ project.labels }}`      | `string[]`       | Array of label name strings                    |
+| `{{ project.status }}`      | `string`         | Raw Linear status, e.g. `"started"`            |
+| `{{ project.health }}`      | `string \| null` | `"onTrack"`, `"atRisk"`, `"offTrack"`, or null |
+| `{{ project.leadName }}`    | `string \| null` | Lead's display name                            |
+| `{{ project.memberCount }}` | `number`         | Number of project members                      |
+| `{{ project.milestones }}`  | `array`          | Array of milestone objects (see below)         |
+| `{{ project.startDate }}`   | `string \| null` | ISO date string                                |
+| `{{ project.targetDate }}`  | `string \| null` | ISO date string                                |
+| `{{ project.progress }}`    | `number`         | Integer 0-100                                  |
+| `{{ project.url }}`         | `string`         | Linear URL                                     |
+| `{{ project.createdAt }}`   | `string`         | ISO timestamp                                  |
+| `{{ project.updatedAt }}`   | `string`         | ISO timestamp                                  |
 
 **Milestone fields** (each item in `project.milestones`):
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `{{ m.id }}` | `string` | Milestone UUID |
-| `{{ m.name }}` | `string` | Milestone name |
+| Variable              | Type             | Description           |
+| --------------------- | ---------------- | --------------------- |
+| `{{ m.id }}`          | `string`         | Milestone UUID        |
+| `{{ m.name }}`        | `string`         | Milestone name        |
 | `{{ m.description }}` | `string \| null` | Milestone description |
-| `{{ m.status }}` | `string` | Milestone status |
-| `{{ m.progress }}` | `number` | Integer 0-100 |
-| `{{ m.targetDate }}` | `string \| null` | ISO date string |
+| `{{ m.status }}`      | `string`         | Milestone status      |
+| `{{ m.progress }}`    | `number`         | Integer 0-100         |
+| `{{ m.targetDate }}`  | `string \| null` | ISO date string       |
 
 ### `attempt` and `workspace_dir`
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `{{ attempt }}` | `number` | Integer starting at 1, increments on each retry |
+| Variable              | Type     | Description                                      |
+| --------------------- | -------- | ------------------------------------------------ |
+| `{{ attempt }}`       | `number` | Integer starting at 1, increments on each retry  |
 | `{{ workspace_dir }}` | `string` | Absolute path to the agent's workspace directory |
 
 ---
@@ -244,12 +244,12 @@ Hooks run in the workspace directory as shell commands. Two types of variable su
 
 Set by Harmonica before running each hook:
 
-| Variable | Value |
-|----------|-------|
-| `HARM_ISSUE_ID` | Work item UUID |
-| `HARM_ISSUE_IDENTIFIER` | Human identifier, e.g. `ENG-42` or project slug |
-| `HARM_WORKSPACE_DIR` | Absolute path to the workspace directory |
-| `HARM_SESSION_ID` | Claude session ID (empty string in `after_create`) |
+| Variable                | Value                                              |
+| ----------------------- | -------------------------------------------------- |
+| `HARM_ISSUE_ID`         | Work item UUID                                     |
+| `HARM_ISSUE_IDENTIFIER` | Human identifier, e.g. `ENG-42` or project slug    |
+| `HARM_WORKSPACE_DIR`    | Absolute path to the workspace directory           |
+| `HARM_SESSION_ID`       | Claude session ID (empty string in `after_create`) |
 
 ```yaml
 hooks:
@@ -273,7 +273,7 @@ Use `${VAR}` or `$VAR` anywhere in YAML frontmatter values. Path fields addition
 workspace:
   repo_url: ${HARM_REPO_URL}
 agent:
-  api_key: ${ANTHROPIC_API_KEY}      # only needed for auth_method: api_key
+  api_key: ${ANTHROPIC_API_KEY} # only needed for auth_method: api_key
 ```
 
 Substitution happens at config load time. If a referenced variable is not set in the environment, the literal `${VAR}` string is left intact silently (no error is thrown).

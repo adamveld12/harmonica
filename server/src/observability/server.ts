@@ -1,6 +1,7 @@
 import type { NotificationEvent } from "../types.ts";
 import type { HarmonicaDB } from "./db.ts";
 import type { WorkflowManager } from "../orchestrator/workflow-manager.ts";
+import type { Config } from "../config/schema.ts";
 import { join } from "path";
 import { existsSync } from "node:fs";
 
@@ -8,6 +9,23 @@ export interface DashboardServer {
   port: number;
   stop(): void;
   notify(event: NotificationEvent): void;
+}
+
+export interface GlobalSettings {
+  configDir: string;
+  workspacesDir: string;
+  dbPath: string;
+  serverPort?: number;
+  serverHost?: string;
+  workflowsPath: string;
+  repoUrlOverride?: string;
+  debug: boolean;
+}
+
+function sanitizeConfig(config: Config): Omit<Config, "tracker"> & { tracker: Omit<Config["tracker"], "api_key"> } {
+  const { api_key: _tKey, ...tracker } = config.tracker;
+  const { api_key: _aKey, ...agent } = config.agent;
+  return { ...config, tracker, agent };
 }
 
 const MIME: Record<string, string> = {
@@ -28,11 +46,16 @@ export function startDashboardServer(
   manager: WorkflowManager,
   host?: string,
   db?: HarmonicaDB,
+  settings?: GlobalSettings,
 ): DashboardServer {
   const clients = new Set<ReadableStreamDefaultController>();
 
   function broadcastWorkflows() {
-    const workflows = manager.getAllSnapshots();
+    const raw = manager.getAllSnapshots();
+    const workflows: Record<string, unknown> = {};
+    for (const [id, entry] of Object.entries(raw)) {
+      workflows[id] = { ...entry, config: sanitizeConfig(entry.config) };
+    }
     const data = JSON.stringify({ workflows });
     const msg = `event: state\ndata: ${data}\n\n`;
     for (const ctrl of clients) {
@@ -81,11 +104,11 @@ export function startDashboardServer(
   }, 1_000);
 
   const uiDistDir = (() => {
-    // Published package: dist/*.js → ../ui/dist
-    const fromDist = join(import.meta.dir, "..", "ui", "dist");
+    // Published: dist/server/*.js → ../ui (sibling under dist/)
+    const fromDist = join(import.meta.dir, "..", "ui");
     if (existsSync(fromDist)) return fromDist;
-    // Dev mode: src/observability/*.ts → ../../ui/dist
-    return join(import.meta.dir, "..", "..", "ui", "dist");
+    // Dev: server/src/observability/*.ts → ../../../ui/dist
+    return join(import.meta.dir, "..", "..", "..", "ui", "dist");
   })();
 
   const server = Bun.serve({
@@ -104,7 +127,11 @@ export function startDashboardServer(
             ctrl = c;
             clients.add(ctrl);
             // Send initial state
-            const workflows = manager.getAllSnapshots();
+            const raw = manager.getAllSnapshots();
+            const workflows: Record<string, unknown> = {};
+            for (const [id, entry] of Object.entries(raw)) {
+              workflows[id] = { ...entry, config: sanitizeConfig(entry.config) };
+            }
             const data = JSON.stringify({ workflows });
             ctrl.enqueue(`event: state\ndata: ${data}\n\n`);
           },
@@ -148,6 +175,11 @@ export function startDashboardServer(
         return Response.json(list);
       }
 
+      // GET /api/v1/settings
+      if (path === "/api/v1/settings" && req.method === "GET") {
+        return Response.json(settings ?? null);
+      }
+
       // GET /api/v1/workflows/:id/state
       const workflowStateMatch = path.match(/^\/api\/v1\/workflows\/([^/]+)\/state$/);
       if (workflowStateMatch && req.method === "GET") {
@@ -156,30 +188,6 @@ export function startDashboardServer(
         if (!instance) return new Response("Not Found", { status: 404 });
         const snapshots = manager.getAllSnapshots();
         return Response.json(snapshots[id]?.snapshot ?? null);
-      }
-
-      // GET /api/v1/workflows/:id/config
-      const workflowConfigMatch = path.match(/^\/api\/v1\/workflows\/([^/]+)\/config$/);
-      if (workflowConfigMatch && req.method === "GET") {
-        const id = workflowConfigMatch[1];
-        const instance = manager.getInstance(id);
-        if (!instance) return new Response("Not Found", { status: 404 });
-        const c = instance.config;
-        return Response.json({
-          model: c.agent.model,
-          max_turns: c.agent.max_turns,
-          max_concurrency: c.agent.max_concurrency,
-          permission_mode: c.agent.permission_mode,
-          auth_method: c.agent.auth_method,
-          poll_interval_ms: c.poll_interval_ms,
-          stall_timeout_ms: c.stall_timeout_ms,
-          name: instance.name,
-          description: instance.description,
-          repo_url: c.workspace.repo_url,
-          workspaces_dir: manager.getWorkspacesDir(),
-          cleanup_on_start: c.workspace.cleanup_on_start,
-          cleanup_on_terminal: c.workspace.cleanup_on_terminal,
-        });
       }
 
       // GET /api/v1/workflows/:id/completed
