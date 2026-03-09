@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const SensorSchema = z.object({
+const LinearSensorSchema = z.object({
   type: z.literal("linear"),
   api_key: z.string(),
   mode: z.enum(["issues", "projects"]).default("issues"),
@@ -10,23 +10,44 @@ const SensorSchema = z.object({
   assignees: z.array(z.string()).optional(),
 });
 
+const GitHubSensorSchema = z.object({
+  type: z.literal("github"),
+  token: z.string().optional(),
+  owner: z.string(),
+  repo: z.string(),
+  mode: z.enum(["issues", "pull_requests", "projects"]).default("issues"),
+  project: z.string().optional(),
+  poll_interval_s: z.number().default(30),
+  refresh_ttl_s: z.number().default(5),
+  active_states: z.array(z.string()).optional(),
+});
+
+const SensorSchema = z.discriminatedUnion("type", [LinearSensorSchema, GitHubSensorSchema]);
+
 export const SensorsFileSchema = z.record(z.string(), SensorSchema);
 
+export type LinearSensorConfig = z.infer<typeof LinearSensorSchema>;
+export type GitHubSensorConfig = z.infer<typeof GitHubSensorSchema>;
 export type SensorConfig = z.infer<typeof SensorSchema>;
 export type SensorsFileConfig = z.infer<typeof SensorsFileSchema>;
 
 export const TrackerSchema = z.object({
-  type: z.literal("linear"),
+  type: z.enum(["linear", "github"]).default("linear"),
   sensor: z.string(),
   filter_labels: z.array(z.string()).optional(),
   filter_states: z.array(z.string()).optional(),
   filter_project: z.string().optional(),
   filter_assignees: z.array(z.string()).optional(),
+  // GitHub-specific filters
+  filter_milestone: z.string().optional(),
+  filter_base_branch: z.string().optional(),
+  filter_draft: z.boolean().optional(),
+  // projects mode
   project_id: z.string().optional(),
   project_name: z.string().optional(),
   // Populated at runtime from sensor, not provided in workflow frontmatter
   api_key: z.string().optional(),
-  mode: z.enum(["issues", "projects"]).optional(),
+  mode: z.enum(["issues", "projects", "pull_requests"]).optional(),
   active_states: z.array(z.string()).optional(),
   terminal_states: z.array(z.string()).optional(),
 });

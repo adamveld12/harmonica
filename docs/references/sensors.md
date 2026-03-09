@@ -1,6 +1,6 @@
 # Sensors Reference
 
-Sensors define how Harmonica connects to external data sources (currently Linear) to discover work items. They are **shared resources** — multiple workflows can reference the same sensor, allowing them to share a single API connection and polling loop.
+Sensors define how Harmonica connects to external data sources (Linear or GitHub) to discover work items. They are **shared resources** — multiple workflows can reference the same sensor, allowing them to share a single API connection and polling loop.
 
 ## File Location
 
@@ -30,11 +30,13 @@ Harmonica watches `.agents/sensors.yaml` for changes. When the file is modified,
 
 ## Schema
 
-Every sensor entry must conform to `SensorSchema`:
+Sensors use a discriminated union on `type`. Every sensor shares the common polling fields.
+
+### Linear sensor (`type: linear`)
 
 | Field             | Type                       | Default    | Description                                                                                                                                                                                                                                               |
 | ----------------- | -------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `type`            | `"linear"`                 | —          | **Required.** Sensor type. Only `linear` is currently supported.                                                                                                                                                                                          |
+| `type`            | `"linear"`                 | —          | **Required.** Sensor type.                                                                                                                                                                                                                                |
 | `api_key`         | `string`                   | —          | **Required.** Linear API key. Supports `${VAR}` environment variable substitution.                                                                                                                                                                        |
 | `mode`            | `"issues"` \| `"projects"` | `"issues"` | Whether to poll for Linear issues or projects.                                                                                                                                                                                                            |
 | `poll_interval_s` | `number`                   | `30`       | Seconds between Linear API polls.                                                                                                                                                                                                                         |
@@ -42,7 +44,23 @@ Every sensor entry must conform to `SensorSchema`:
 | `active_states`   | `string[]`                 | —          | State/status names to fetch from Linear. Controls fetch scope only — issues in these states are returned by the API. Completion classification (terminal vs. active) is configured per-workflow in the tracker section. If omitted, uses Linear defaults. |
 | `assignees`       | `string[]`                 | —          | Filter to issues assigned to any of these Linear display names. Inherited by workflows as the default for `filter_assignees` unless overridden. Issues mode only.                                                                                         |
 
-## Example: Multiple Sensors
+### GitHub sensor (`type: github`)
+
+Requires the `gh` CLI to be installed and authenticated (`gh auth login`), or a PAT via `token`.
+
+| Field             | Type                                            | Default    | Description                                                                                                    |
+| ----------------- | ----------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------- |
+| `type`            | `"github"`                                      | —          | **Required.** Sensor type.                                                                                     |
+| `owner`           | `string`                                        | —          | **Required.** GitHub organization or user name (e.g. `"acme"`).                                                |
+| `repo`            | `string`                                        | —          | **Required.** Repository name (e.g. `"widget"`).                                                               |
+| `mode`            | `"issues"` \| `"pull_requests"` \| `"projects"` | `"issues"` | What to poll: open issues, open PRs, or GitHub Projects v2 items.                                              |
+| `project`         | `string`                                        | —          | **Required when `mode: projects`.** GitHub Project name (e.g. `"Q3 Roadmap"`).                                 |
+| `token`           | `string`                                        | —          | Personal access token. If omitted, uses `GH_TOKEN` env var or `gh` CLI credentials.                            |
+| `poll_interval_s` | `number`                                        | `30`       | Seconds between GitHub API polls.                                                                              |
+| `refresh_ttl_s`   | `number`                                        | `5`        | Minimum seconds between forced refresh requests.                                                               |
+| `active_states`   | `string[]`                                      | —          | For `mode: projects` only — project item status values to treat as active. Required to dispatch project items. |
+
+## Example: Multiple Sensors (Linear + GitHub)
 
 ```yaml
 # .agents/sensors.yaml
@@ -62,9 +80,33 @@ linear-projects:
   mode: projects
   poll_interval_s: 30
   active_states: ["Planning"]
+
+gh-issues:
+  type: github
+  owner: acme
+  repo: widget
+  mode: issues
+  poll_interval_s: 30
+
+gh-prs:
+  type: github
+  token: ${GITHUB_TOKEN}
+  owner: acme
+  repo: widget
+  mode: pull_requests
+  poll_interval_s: 30
+
+gh-project:
+  type: github
+  owner: acme
+  repo: widget
+  mode: projects
+  project: "Q3 Roadmap"
+  poll_interval_s: 60
+  active_states: ["In Progress"]
 ```
 
-Two workflows can then each reference a different sensor:
+Workflows reference sensors by name:
 
 ```yaml
 # workflow-a.md frontmatter
@@ -77,12 +119,19 @@ tracker:
 ```yaml
 # workflow-b.md frontmatter
 tracker:
-  type: linear
-  sensor: linear-projects
-  filter_labels: ["auto-plan"]
+  type: github
+  sensor: gh-issues
+  filter_labels: ["agent-task"]
 ```
 
-Both workflows share the same `LINEAR_API_KEY` and Linear connection configuration defined in the sensor, but apply their own filtering logic.
+```yaml
+# workflow-c.md frontmatter
+tracker:
+  type: github
+  sensor: gh-prs
+  filter_draft: false
+  filter_base_branch: main
+```
 
 ## Notes
 

@@ -6,7 +6,7 @@ import { startDashboardServer, type GlobalSettings } from "./observability/serve
 import { HarmonicaDB } from "./observability/db.ts";
 import { logger } from "./observability/logger.ts";
 import { loadSensors, watchSensors } from "./config/sensor-loader.ts";
-import { SensorManager } from "./integration/sensor-manager.ts";
+import { SensorManager } from "./integration/sensor/sensor-manager.ts";
 import { expandHome } from "./config/resolver.ts";
 import { DEFAULTS } from "./config/defaults.ts";
 

@@ -37,7 +37,7 @@ import { logger } from "../observability/logger.ts";
 import type { WorkspaceManager } from "../execution/workspace.ts";
 import { runHooks } from "../execution/hooks.ts";
 import { runWorker } from "../execution/worker.ts";
-import { createLinearMcpServerConfig } from "../integration/linear-mcp-tool.ts";
+import { createLinearMcpServerConfig } from "../integration/linear/mcp-tool.ts";
 
 function getWorkItemExtra(item: WorkItem): Record<string, unknown> | undefined {
   if (item.kind !== "project") return undefined;
@@ -338,21 +338,28 @@ export class Orchestrator {
       return;
     }
 
-    const apiKey = this.config.tracker.api_key ?? "";
-    const mcpServers = () => ({
-      linear: createLinearMcpServerConfig(apiKey),
-      harmonica: createSdkMcpServer({
-        name: "harmonica",
-        tools: [
-          tool(
-            "task_complete",
-            "Signal that you have completed all work on this task. Call this when you are fully finished.",
-            { reason: z.string().optional().describe("Brief summary of what you accomplished") },
-            async () => ({ content: [{ type: "text" as const, text: "Task marked complete." }] }),
-          ),
-        ],
-      }) as any,
-    });
+    const mcpServers = () => {
+      const servers: Record<string, unknown> = {
+        harmonica: createSdkMcpServer({
+          name: "harmonica",
+          tools: [
+            tool(
+              "task_complete",
+              "Signal that you have completed all work on this task. Call this when you are fully finished.",
+              { reason: z.string().optional().describe("Brief summary of what you accomplished") },
+              async () => ({ content: [{ type: "text" as const, text: "Task marked complete." }] }),
+            ),
+          ],
+        }) as any,
+      };
+
+      if (this.config.tracker.type === "linear") {
+        const apiKey = this.config.tracker.api_key ?? "";
+        servers.linear = createLinearMcpServerConfig(apiKey);
+      }
+
+      return servers as Record<string, import("../types.ts").McpServerConfig>;
+    };
 
     const workerPromise = runWorker({
       item,

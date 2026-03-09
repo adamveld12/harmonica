@@ -1,7 +1,7 @@
-import { logger } from "../observability/logger.ts";
-import { FETCH_ALL_ISSUES, FETCH_SINGLE_ISSUE, FETCH_ALL_PROJECTS, FETCH_PROJECT_BY_ID } from "./linear-queries.ts";
-import type { LinearIssueNode, LinearProjectNode, LinearProjectListNode, LinearPageInfo } from "./linear-types.ts";
-import type { TrackerConfig } from "../config/schema.ts";
+import { logger } from "../../observability/logger.ts";
+import { FETCH_ALL_ISSUES, FETCH_SINGLE_ISSUE, FETCH_ALL_PROJECTS, FETCH_PROJECT_BY_ID } from "./queries.ts";
+import type { LinearIssueNode, LinearProjectNode, LinearProjectListNode, LinearPageInfo } from "./types.ts";
+import type { TrackerConfig } from "../../config/schema.ts";
 
 const LINEAR_API = "https://api.linear.app/graphql";
 

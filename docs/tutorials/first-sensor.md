@@ -2,7 +2,9 @@
 
 ## What is a sensor?
 
-A **sensor** is a named Linear API connection. It polls Linear on an interval, caches results, and makes issue or project data available to your workflows. Multiple workflows can share a single sensor, which means one API connection serves all of them.
+A **sensor** is a named connection to an issue tracker. It polls on an interval, caches results, and makes work items available to your workflows. Multiple workflows can share a single sensor, which means one API connection serves all of them.
+
+Harmonica supports two sensor types: **`linear`** (Linear issues and projects) and **`github`** (GitHub issues, pull requests, and Projects v2). This tutorial covers the Linear sensor. For GitHub, see [Setting up a GitHub sensor](./github-sensor.md).
 
 Sensors are defined in `.agents/sensors.yaml` and referenced by name in workflow files.
 
@@ -53,7 +55,7 @@ Here's what each field does:
 | Field             | Description                                                                                                |
 | ----------------- | ---------------------------------------------------------------------------------------------------------- |
 | `linear-issues`   | The sensor name. Workflows reference this to connect.                                                      |
-| `type: linear`    | The sensor type. Currently only `linear` is supported.                                                     |
+| `type: linear`    | The sensor type. `linear` or `github` are supported.                                                       |
 | `api_key`         | Your Linear API key. `${LINEAR_API_KEY}` pulls from the environment.                                       |
 | `mode: issues`    | What to poll for. Use `issues` for individual issues or `projects` for Linear projects.                    |
 | `poll_interval_s` | How often to poll Linear, in seconds. 30 = every 30 seconds.                                               |

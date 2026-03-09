@@ -1,4 +1,4 @@
-import type { McpServerConfig } from "../types.ts";
+import type { McpServerConfig } from "../../types.ts";
 import { fileURLToPath } from "url";
 
 const LINEAR_API = "https://api.linear.app/graphql";

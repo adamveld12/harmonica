@@ -1,9 +1,5 @@
-import type { NormalizedIssue, NormalizedProject, NormalizedMilestone, IssueState } from "../types.ts";
-
-type StateClassificationConfig = {
-  active_states?: string[];
-  terminal_states?: string[];
-};
+import type { NormalizedIssue, NormalizedProject, NormalizedMilestone, IssueState } from "../../types.ts";
+import type { StateClassificationConfig } from "../sensor/types.ts";
 
 interface LinearStateNode {
   id: string;

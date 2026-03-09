@@ -13,7 +13,7 @@ import { logger } from "../observability/logger.ts";
 import type { WorkflowConfig, WorkflowId, NotificationEvent, StateSnapshot, CompletedSession } from "../types.ts";
 import type { Config } from "../config/schema.ts";
 import type { HarmonicaDB } from "../observability/db.ts";
-import type { SensorManager } from "../integration/sensor-manager.ts";
+import type { SensorManager } from "../integration/sensor/sensor-manager.ts";
 
 export interface WorkflowInstance {
   id: WorkflowId;
