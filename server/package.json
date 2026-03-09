@@ -4,11 +4,14 @@
   "version": "0.2.0",
   "type": "module",
   "scripts": {
-    "build": "bun build src/index.ts --target bun --packages external --splitting --outdir dist --format esm",
+    "build": "bun build src/index.ts --target bun --splitting --outdir dist --format esm --external @anthropic-ai/claude-agent-sdk --external liquidjs --external yaml --external zod",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.69",
+    "@harmonica/sensor-core": "workspace:*",
+    "@harmonica/sensor-linear": "workspace:*",
+    "@harmonica/sensor-github": "workspace:*",
     "liquidjs": "^10.0.0",
     "yaml": "^2.0.0",
     "zod": "^4.0.0"

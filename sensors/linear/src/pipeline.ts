@@ -1,4 +1,4 @@
-import type { SensorPipeline } from "../sensor/types.ts";
+import type { SensorPipeline } from "@harmonica/sensor-core";
 import type { LinearIssueNode, LinearProjectListNode, LinearProjectNode } from "./types.ts";
 import { normalizeIssue, normalizeProjectListItem, normalizeProject } from "./types.ts";
 import { matchesIssueFilters, matchesProjectFilters } from "./api.ts";

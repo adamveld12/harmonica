@@ -1,5 +1,5 @@
-import type { NormalizedIssue, NormalizedProject, NormalizedMilestone, IssueState } from "../../types.ts";
-import type { StateClassificationConfig } from "../sensor/types.ts";
+import type { NormalizedIssue, NormalizedProject, NormalizedMilestone, IssueState } from "@harmonica/sensor-core";
+import type { StateClassificationConfig } from "@harmonica/sensor-core";
 
 interface LinearStateNode {
   id: string;

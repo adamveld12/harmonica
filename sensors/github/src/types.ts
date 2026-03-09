@@ -1,6 +1,6 @@
-import type { NormalizedIssue, NormalizedProject, IssueState } from "../../types.ts";
-import type { StateClassificationConfig } from "../sensor/types.ts";
-import type { TrackerConfig } from "../../config/schema.ts";
+import type { NormalizedIssue, NormalizedProject, IssueState } from "@harmonica/sensor-core";
+import type { StateClassificationConfig } from "@harmonica/sensor-core";
+import type { TrackerConfig } from "@harmonica/sensor-core";
 
 // ---------------------------------------------------------------------------
 // Raw GitHub API shapes

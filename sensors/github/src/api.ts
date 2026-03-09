@@ -1,4 +1,4 @@
-import { logger } from "../../observability/logger.ts";
+import { logger } from "@harmonica/sensor-core";
 import type { GitHubIssueNode, GitHubPRNode, GitHubProjectItemNode } from "./types.ts";
 
 // ---------------------------------------------------------------------------

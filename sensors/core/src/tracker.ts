@@ -1,4 +1,4 @@
-import type { WorkItem } from "../types.ts";
+import type { WorkItem } from "./work-item.ts";
 
 export interface TrackerClient {
   fetchCandidates(): Promise<WorkItem[]>;

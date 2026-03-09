@@ -1,28 +1,28 @@
-import { logger } from "../../observability/logger.ts";
-import type { SensorsFileConfig, TrackerConfig, SensorConfig } from "../../config/schema.ts";
-import type { TrackerClient } from "../tracker.ts";
-import type { Sensor } from "./types.ts";
-import { SensorTrackerClient } from "./sensor-tracker.ts";
-import { createLinearSensor } from "../linear/factory.ts";
-import { createGitHubSensor } from "../github/factory.ts";
-
-function createSensor(config: SensorConfig): Sensor {
-  if (config.type === "github") {
-    return createGitHubSensor(config);
-  }
-  return createLinearSensor(config);
-}
+import { logger } from "../observability/logger.ts";
+import type {
+  SensorsFileConfig,
+  TrackerConfig,
+  Sensor,
+  SensorModule,
+  SensorTrackerClient,
+} from "@harmonica/sensor-core";
+import { SensorTrackerClient as SensorTrackerClientImpl } from "@harmonica/sensor-core";
+import type { TrackerClient } from "@harmonica/sensor-core";
 
 export class SensorManager {
-  private sensors = new Map<string, { sensor: Sensor; rawConfig: SensorConfig }>();
+  private sensors = new Map<string, { sensor: Sensor; rawConfig: SensorsFileConfig[string] }>();
 
-  constructor(sensorsConfig: SensorsFileConfig) {
-    for (const [name, config] of Object.entries(sensorsConfig)) {
-      this.sensors.set(name, { sensor: createSensor(config), rawConfig: config });
-    }
-  }
+  constructor(
+    private rawConfigs: SensorsFileConfig,
+    private builtins: Record<string, SensorModule>,
+  ) {}
 
   async start(): Promise<void> {
+    for (const [name, config] of Object.entries(this.rawConfigs)) {
+      const sensor = await this.createSensor(name, config);
+      this.sensors.set(name, { sensor, rawConfig: config });
+    }
+
     await Promise.all(
       Array.from(this.sensors.entries()).map(async ([name, { sensor }]) => {
         logger.info("sensor starting", { name });
@@ -49,7 +49,7 @@ export class SensorManager {
       throw new Error(`Sensor "${sensorName}" not found. Check .agents/sensors.yaml`);
     }
 
-    const { sensor } = entry;
+    const { sensor, rawConfig } = entry;
     sensor.subscribe(workflowId, trackerConfig);
 
     const sensorConfig = sensor.getConfig();
@@ -57,18 +57,19 @@ export class SensorManager {
     // Patch tracker config with sensor-derived values
     const resolvedConfig: TrackerConfig = {
       ...trackerConfig,
-      mode: trackerConfig.mode ?? sensorConfig.mode,
+      mode: trackerConfig.mode ?? (sensorConfig.mode as TrackerConfig["mode"]),
     };
 
     // Linear-specific: propagate api_key and assignees fallback
     if (sensorConfig.type === "linear") {
-      resolvedConfig.api_key = sensorConfig.api_key;
+      const rc = rawConfig as Record<string, unknown>;
+      resolvedConfig.api_key = rc["api_key"] as string | undefined;
       if (!resolvedConfig.filter_assignees) {
-        resolvedConfig.filter_assignees = sensorConfig.assignees;
+        resolvedConfig.filter_assignees = rc["assignees"] as string[] | undefined;
       }
     }
 
-    const tracker = new SensorTrackerClient(sensor, resolvedConfig);
+    const tracker = new SensorTrackerClientImpl(sensor, resolvedConfig);
     return { tracker, resolvedConfig };
   }
 
@@ -78,7 +79,7 @@ export class SensorManager {
     }
   }
 
-  updateConfig(newConfig: SensorsFileConfig): void {
+  async updateConfig(newConfig: SensorsFileConfig): Promise<void> {
     const newNames = new Set(Object.keys(newConfig));
     const oldNames = new Set(this.sensors.keys());
 
@@ -95,7 +96,7 @@ export class SensorManager {
     for (const name of newNames) {
       if (!oldNames.has(name)) {
         const config = newConfig[name];
-        const sensor = createSensor(config);
+        const sensor = await this.createSensor(name, config);
         this.sensors.set(name, { sensor, rawConfig: config });
         sensor.start().catch((err) => logger.error("sensor start error", { name, error: String(err) }));
         logger.info("sensor added", { name });
@@ -110,11 +111,34 @@ export class SensorManager {
       // Detect change by comparing serialized config
       if (JSON.stringify(newCfg) !== JSON.stringify(existing.rawConfig)) {
         existing.sensor.stop();
-        const sensor = createSensor(newCfg);
+        const sensor = await this.createSensor(name, newCfg);
         this.sensors.set(name, { sensor, rawConfig: newCfg });
         sensor.start().catch((err) => logger.error("sensor restart error", { name, error: String(err) }));
         logger.info("sensor restarted", { name });
       }
+    }
+  }
+
+  private async createSensor(name: string, rawConfig: SensorsFileConfig[string]): Promise<Sensor> {
+    const type = (rawConfig as Record<string, unknown>)["type"] as string;
+    const mod = await this.resolveModule(type);
+    const config = mod.schema.parse(rawConfig);
+    logger.debug("sensor created", { name, type });
+    return mod.createSensor(config);
+  }
+
+  private async resolveModule(type: string): Promise<SensorModule> {
+    if (this.builtins[type]) return this.builtins[type];
+    // Dynamic import for custom sensors
+    const packageName = `@harmonica/sensor-${type}`;
+    try {
+      const mod = await import(packageName);
+      if (!mod.createSensor || !mod.schema) {
+        throw new Error(`${packageName} missing required exports (createSensor, schema)`);
+      }
+      return mod as SensorModule;
+    } catch (err) {
+      throw new Error(`Sensor type "${type}" not found. Install ${packageName} to use it. (${err})`);
     }
   }
 }

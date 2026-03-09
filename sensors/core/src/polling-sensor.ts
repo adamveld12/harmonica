@@ -1,8 +1,17 @@
-import { logger } from "../../observability/logger.ts";
-import type { SensorConfig, TrackerConfig } from "../../config/schema.ts";
-import type { WorkItem } from "../../types.ts";
-import type { Sensor, SensorBackend, SensorPipeline, StateClassificationConfig } from "./types.ts";
+import { logger } from "./logger.ts";
+import type { TrackerConfig } from "./config.ts";
+import type { WorkItem } from "./work-item.ts";
+import type { Sensor, SensorBackend, SensorPipeline, StateClassificationConfig, SensorConfigBase } from "./sensor.ts";
 
+/**
+ * Generic polling sensor engine.
+ * @typeParam TList - Shape of items returned by bulk fetchAll() polls.
+ * @typeParam TDetail - Shape of single-item fetchOne() responses (defaults to TList).
+ *   Linear projects use different list vs detail shapes; most backends are symmetric.
+ *
+ * Owns: poll timer, node cache, subscription tracking, refresh TTL cache, stale detection.
+ * Delegates: data fetching to SensorBackend, filtering/normalization to SensorPipeline.
+ */
 export class PollingSensor<TList, TDetail = TList> implements Sensor {
   private subscriptions = new Map<string, TrackerConfig>();
   private cachedNodes: TList[] = [];
@@ -13,7 +22,7 @@ export class PollingSensor<TList, TDetail = TList> implements Sensor {
   private fetching = false;
 
   constructor(
-    private config: SensorConfig,
+    private config: SensorConfigBase,
     private backend: SensorBackend<TList, TDetail>,
     private pipeline: SensorPipeline<TList, TDetail>,
   ) {}
@@ -106,7 +115,7 @@ export class PollingSensor<TList, TDetail = TList> implements Sensor {
     return result;
   }
 
-  getConfig(): SensorConfig {
+  getConfig(): SensorConfigBase {
     return this.config;
   }
 }

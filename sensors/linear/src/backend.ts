@@ -1,4 +1,4 @@
-import type { SensorBackend } from "../sensor/types.ts";
+import type { SensorBackend } from "@harmonica/sensor-core";
 import type { LinearIssueNode, LinearProjectListNode, LinearProjectNode } from "./types.ts";
 import { fetchAllIssueNodes, fetchAllProjectNodes, fetchOneIssueNode, fetchOneProjectNode } from "./api.ts";
 

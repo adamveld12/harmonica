@@ -1,6 +1,6 @@
-import type { Sensor } from "../sensor/types.ts";
-import type { GitHubSensorConfig } from "../../config/schema.ts";
-import { PollingSensor } from "../sensor/polling-sensor.ts";
+import type { Sensor } from "@harmonica/sensor-core";
+import { PollingSensor } from "@harmonica/sensor-core";
+import type { GitHubSensorConfig } from "./schema.ts";
 import { createGitHubIssuesBackend, createGitHubPRsBackend, createGitHubProjectsBackend } from "./backend.ts";
 import { createGitHubIssuesPipeline, createGitHubPRsPipeline, createGitHubProjectsPipeline } from "./pipeline.ts";
 

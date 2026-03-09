@@ -10,7 +10,7 @@ import type {
   OutputLine,
 } from "../types.ts";
 import type { Config } from "../config/schema.ts";
-import type { TrackerClient } from "../integration/tracker.ts";
+import type { TrackerClient } from "@harmonica/sensor-core";
 import { renderPrompt } from "../policy/prompt-renderer.ts";
 import { logger } from "../observability/logger.ts";
 

@@ -1,5 +1,5 @@
-import { logger } from "../../observability/logger.ts";
-import type { SensorBackend } from "../sensor/types.ts";
+import { logger } from "@harmonica/sensor-core";
+import type { SensorBackend } from "@harmonica/sensor-core";
 import type { GitHubIssueNode, GitHubPRNode, GitHubProjectItemNode } from "./types.ts";
 import {
   fetchAllIssues,

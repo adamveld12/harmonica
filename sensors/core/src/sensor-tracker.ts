@@ -1,8 +1,12 @@
-import type { TrackerClient } from "../tracker.ts";
-import type { WorkItem } from "../../types.ts";
-import type { TrackerConfig } from "../../config/schema.ts";
-import type { Sensor } from "./types.ts";
+import type { TrackerClient } from "./tracker.ts";
+import type { WorkItem } from "./work-item.ts";
+import type { TrackerConfig } from "./config.ts";
+import type { Sensor } from "./sensor.ts";
 
+/**
+ * Adapts a Sensor to the TrackerClient interface consumed by the orchestrator.
+ * Binds a specific TrackerConfig (per-workflow filters) to the shared sensor.
+ */
 export class SensorTrackerClient implements TrackerClient {
   constructor(
     private sensor: Sensor,

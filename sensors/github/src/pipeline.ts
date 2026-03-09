@@ -1,4 +1,4 @@
-import type { SensorPipeline } from "../sensor/types.ts";
+import type { SensorPipeline } from "@harmonica/sensor-core";
 import type { GitHubIssueNode, GitHubPRNode, GitHubProjectItemNode } from "./types.ts";
 import {
   normalizeGitHubIssue,
@@ -8,9 +8,6 @@ import {
   matchesGitHubPRFilters,
   matchesGitHubProjectItemFilters,
 } from "./types.ts";
-import type { TrackerConfig } from "../../config/schema.ts";
-import type { StateClassificationConfig } from "../sensor/types.ts";
-import type { WorkItem } from "../../types.ts";
 
 // Owner and repo are captured by each factory function below.
 

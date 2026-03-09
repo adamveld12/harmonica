@@ -11,7 +11,7 @@ import type {
 } from "../types.ts";
 import { getWorkItemAssigneeName, getWorkItemProjectName } from "../types.ts";
 import type { Config } from "../config/schema.ts";
-import type { TrackerClient } from "../integration/tracker.ts";
+import type { TrackerClient } from "@harmonica/sensor-core";
 import type { AgentRunner } from "../types.ts";
 import type { HarmonicaDB } from "../observability/db.ts";
 import { createState } from "./state.ts";
@@ -37,7 +37,7 @@ import { logger } from "../observability/logger.ts";
 import type { WorkspaceManager } from "../execution/workspace.ts";
 import { runHooks } from "../execution/hooks.ts";
 import { runWorker } from "../execution/worker.ts";
-import { createLinearMcpServerConfig } from "../integration/linear/mcp-tool.ts";
+import { createLinearMcpServerConfig } from "@harmonica/sensor-linear";
 
 function getWorkItemExtra(item: WorkItem): Record<string, unknown> | undefined {
   if (item.kind !== "project") return undefined;

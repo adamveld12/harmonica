@@ -1,7 +1,7 @@
-import { logger } from "../../observability/logger.ts";
+import { logger } from "@harmonica/sensor-core";
 import { FETCH_ALL_ISSUES, FETCH_SINGLE_ISSUE, FETCH_ALL_PROJECTS, FETCH_PROJECT_BY_ID } from "./queries.ts";
 import type { LinearIssueNode, LinearProjectNode, LinearProjectListNode, LinearPageInfo } from "./types.ts";
-import type { TrackerConfig } from "../../config/schema.ts";
+import type { TrackerConfig } from "@harmonica/sensor-core";
 
 const LINEAR_API = "https://api.linear.app/graphql";
 

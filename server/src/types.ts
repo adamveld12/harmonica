@@ -4,86 +4,25 @@
  */
 
 // ---------------------------------------------------------------------------
+// Re-exports from @harmonica/sensor-core
+// ---------------------------------------------------------------------------
+
+import type {
+  IssueState,
+  NormalizedIssue,
+  NormalizedMilestone,
+  NormalizedProject,
+  WorkItem,
+  McpServerConfig,
+} from "@harmonica/sensor-core";
+export type { IssueState, NormalizedIssue, NormalizedMilestone, NormalizedProject, WorkItem, McpServerConfig };
+export { getWorkItemAssigneeName, getWorkItemProjectName } from "@harmonica/sensor-core";
+
+// ---------------------------------------------------------------------------
 // Workflow orchestration
 // ---------------------------------------------------------------------------
 
 export type WorkflowId = string;
-
-// ---------------------------------------------------------------------------
-// Issue tracker
-// ---------------------------------------------------------------------------
-
-/** Normalised view of a tracker issue (Linear today, extensible later). */
-export interface NormalizedIssue {
-  kind: "issue";
-  /** Opaque UUID from the tracker. */
-  id: string;
-  /** Human-readable identifier, e.g. "ENG-123". */
-  identifier: string;
-  title: string;
-  description: string | null;
-  state: IssueState;
-  /** Raw state name from the tracker (e.g. "In Progress"). */
-  stateLabel: string;
-  /** Label names attached to the issue. */
-  labels: string[];
-  assigneeId: string | null;
-  assigneeName: string | null;
-  projectName: string | null;
-  url: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/** A single milestone within a Linear project. */
-export interface NormalizedMilestone {
-  id: string;
-  name: string;
-  description: string | null;
-  status: string;
-  progress: number;
-  targetDate: string | null;
-}
-
-/** Normalised view of a Linear project. */
-export interface NormalizedProject {
-  kind: "project";
-  /** Opaque UUID from the tracker. */
-  id: string;
-  /** Project slug identifier. */
-  identifier: string;
-  /** Project name. */
-  title: string;
-  description: string | null;
-  state: IssueState;
-  /** Raw status name from the tracker (e.g. "started"). */
-  stateLabel: string;
-  /** Always empty — Linear projects don't have labels. */
-  labels: string[];
-  url: string;
-  createdAt: string;
-  updatedAt: string;
-  // Project-specific fields
-  status: string;
-  health: string | null;
-  leadName: string | null;
-  memberCount: number;
-  milestones: NormalizedMilestone[];
-  startDate: string | null;
-  targetDate: string | null;
-  progress: number;
-}
-
-/** Discriminated union — either an issue or a project. */
-export type WorkItem = NormalizedIssue | NormalizedProject;
-
-/**
- * Canonical three-way state classification used by the orchestrator.
- *  - active      → item should be / is being worked on
- *  - terminal    → item is done / cancelled; workspace should be removed
- *  - non_active  → item exists but is not ready (e.g. backlog, on hold)
- */
-export type IssueState = "active" | "terminal" | "non_active";
 
 // ---------------------------------------------------------------------------
 // Orchestrator state
@@ -227,15 +166,6 @@ export interface RunTurnOptions {
   mcpServers?: Record<string, McpServerConfig>;
 }
 
-/** Minimal MCP server configuration. */
-export interface McpServerConfig {
-  type: "stdio" | "sse";
-  command?: string;
-  args?: string[];
-  env?: Record<string, string>;
-  url?: string;
-}
-
 /** Factory that creates fresh MCP server configs per turn (avoids Protocol reuse). */
 export type McpServerFactory = () => Record<string, McpServerConfig>;
 
@@ -305,20 +235,6 @@ export interface NotificationEvent {
   turnCount?: number;
   /** Only present on agent_errored */
   error?: string;
-}
-
-// ---------------------------------------------------------------------------
-// WorkItem helper functions
-// ---------------------------------------------------------------------------
-
-/** Returns the assignee name for an issue or the lead name for a project. */
-export function getWorkItemAssigneeName(item: WorkItem): string | null {
-  return item.kind === "issue" ? item.assigneeName : item.leadName;
-}
-
-/** Returns the project name for an issue; always null for a project work item. */
-export function getWorkItemProjectName(item: WorkItem): string | null {
-  return item.kind === "issue" ? item.projectName : null;
 }
 
 // ---------------------------------------------------------------------------

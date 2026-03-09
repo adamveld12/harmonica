@@ -1,6 +1,6 @@
-import type { Sensor } from "../sensor/types.ts";
-import type { LinearSensorConfig } from "../../config/schema.ts";
-import { PollingSensor } from "../sensor/polling-sensor.ts";
+import type { Sensor } from "@harmonica/sensor-core";
+import { PollingSensor } from "@harmonica/sensor-core";
+import type { LinearSensorConfig } from "./schema.ts";
 import { createLinearIssuesBackend, createLinearProjectsBackend } from "./backend.ts";
 import { linearIssuesPipeline, linearProjectsPipeline } from "./pipeline.ts";
 
