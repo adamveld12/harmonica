@@ -153,7 +153,7 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
               break;
             }
             case "tool_use": {
-              if (event.toolName === "task_complete") {
+              if (event.toolName === "task_complete" || event.toolName === "mcp__harmonica__task_complete") {
                 const reason =
                   typeof event.toolInput === "object" && event.toolInput !== null && "reason" in event.toolInput
                     ? String((event.toolInput as Record<string, unknown>).reason)

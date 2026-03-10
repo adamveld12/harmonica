@@ -50,3 +50,11 @@ The `docs/` directory follows the [Divio documentation system](https://docs.divi
 | `pnpm lint`       | Lint server + UI source                           |
 | `pnpm format`     | Format all source files                           |
 | `pnpm test`       | Run tests                                         |
+
+## BEHAVIOR: Non-negotiable behaviors
+
+- **ALWAYS** review documentation and code comments thoroughly when you are planning implementation or making code changes. The docs must always reflect the actual state.
+
+- **PREFER** pure functions, functional programming patterns and clean interface abstractions when designing implementation.
+
+- **ALWAYS** take opportunities to reuse existing functionality.
