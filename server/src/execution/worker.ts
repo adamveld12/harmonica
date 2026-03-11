@@ -108,7 +108,7 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
               workspace_dir: workspaceDir,
             };
       const rendered = await renderPrompt(workflow.promptTemplate, vars);
-      const systemPrompt = buildSystemPrompt(config, item);
+      const systemPrompt = await buildSystemPrompt(config, item, vars);
       // Concatenated into user prompt — the Agent SDK does not support a dedicated
       // systemPrompt parameter that persists across session resumption. Prepending
       // to the first user turn is the only reliable way to carry the context forward.

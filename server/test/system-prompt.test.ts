@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import { buildSystemPrompt } from "../src/policy/system-prompt.ts";
 import type { Config } from "../src/config/schema.ts";
-import type { WorkItem } from "../src/types.ts";
+import type { WorkItem, PromptVariables } from "../src/types.ts";
 
 // ---------------------------------------------------------------------------
 // Test fixtures
@@ -82,24 +82,46 @@ function makeConfig(
   };
 }
 
+function makeVars(item: WorkItem, workspaceDir = "/workspace/ENG-42"): PromptVariables {
+  return {
+    issue: item.kind === "issue" ? (item as PromptVariables["issue"]) : null,
+    project: item.kind === "project" ? (item as PromptVariables["project"]) : null,
+    item,
+    attempt: 1,
+    workspace_dir: workspaceDir,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Tests: three-way dispatch
 // ---------------------------------------------------------------------------
 
 describe("buildSystemPrompt — dispatch", () => {
-  test('system_prompt: "" returns null (disabled)', () => {
+  test('system_prompt: "" returns null (disabled)', async () => {
     const config = makeConfig({ system_prompt: "" });
-    expect(buildSystemPrompt(config, baseIssue)).toBeNull();
+    expect(await buildSystemPrompt(config, baseIssue, makeVars(baseIssue))).toBeNull();
   });
 
-  test("system_prompt: custom string returns it verbatim", () => {
+  test("system_prompt: custom string returns it verbatim", async () => {
     const config = makeConfig({ system_prompt: "My custom prompt" });
-    expect(buildSystemPrompt(config, baseIssue)).toBe("My custom prompt");
+    expect(await buildSystemPrompt(config, baseIssue, makeVars(baseIssue))).toBe("My custom prompt");
   });
 
-  test("system_prompt: undefined returns a non-null string (default)", () => {
+  test("system_prompt: custom string with Liquid variables is rendered", async () => {
+    const config = makeConfig({ system_prompt: "Working on {{ item.identifier }}: {{ item.title }}" });
+    const result = await buildSystemPrompt(config, baseIssue, makeVars(baseIssue));
+    expect(result).toBe("Working on ENG-42: Fix the widget");
+  });
+
+  test("system_prompt: custom string with workspace_dir variable is rendered", async () => {
+    const config = makeConfig({ system_prompt: "Workspace: {{ workspace_dir }}" });
+    const result = await buildSystemPrompt(config, baseIssue, makeVars(baseIssue, "/workspace/test"));
+    expect(result).toBe("Workspace: /workspace/test");
+  });
+
+  test("system_prompt: undefined returns a non-null string (default)", async () => {
     const config = makeConfig({ system_prompt: undefined });
-    const result = buildSystemPrompt(config, baseIssue);
+    const result = await buildSystemPrompt(config, baseIssue, makeVars(baseIssue));
     expect(result).not.toBeNull();
     expect(typeof result).toBe("string");
   });
@@ -110,42 +132,62 @@ describe("buildSystemPrompt — dispatch", () => {
 // ---------------------------------------------------------------------------
 
 describe("buildSystemPrompt — default prompt", () => {
-  test("contains expected heading", () => {
-    const result = buildSystemPrompt(makeConfig(), baseIssue);
+  test("contains expected heading", async () => {
+    const result = await buildSystemPrompt(makeConfig(), baseIssue, makeVars(baseIssue));
     expect(result).toContain("# Harmonica Agent Context");
   });
 
-  test("includes issue identifier and title", () => {
-    const result = buildSystemPrompt(makeConfig(), baseIssue);
+  test("includes issue identifier and title", async () => {
+    const result = await buildSystemPrompt(makeConfig(), baseIssue, makeVars(baseIssue));
     expect(result).toContain("ENG-42");
     expect(result).toContain("Fix the widget");
   });
 
-  test("includes issue URL and state", () => {
-    const result = buildSystemPrompt(makeConfig(), baseIssue);
+  test("includes issue URL and state", async () => {
+    const result = await buildSystemPrompt(makeConfig(), baseIssue, makeVars(baseIssue));
     expect(result).toContain("https://linear.app/team/issue/ENG-42");
     expect(result).toContain("In Progress");
   });
 
-  test("uses 'issue' itemKind for kind=issue", () => {
-    const result = buildSystemPrompt(makeConfig(), baseIssue);
+  test("uses 'issue' itemKind for kind=issue", async () => {
+    const result = await buildSystemPrompt(makeConfig(), baseIssue, makeVars(baseIssue));
     expect(result).toContain("issue **ENG-42**");
   });
 
-  test("uses 'project' itemKind for kind=project", () => {
-    const result = buildSystemPrompt(makeConfig(), baseProject);
+  test("uses 'project' itemKind for kind=project", async () => {
+    const result = await buildSystemPrompt(makeConfig(), baseProject, makeVars(baseProject));
     expect(result).toContain("project **proj-q3**");
   });
 
-  test("includes sensor name and mode", () => {
-    const result = buildSystemPrompt(makeConfig({}, { sensor: "linear-issues", mode: "issues" }), baseIssue);
+  test("includes sensor name and mode", async () => {
+    const result = await buildSystemPrompt(
+      makeConfig({}, { sensor: "linear-issues", mode: "issues" }),
+      baseIssue,
+      makeVars(baseIssue),
+    );
     expect(result).toContain("Sensor: linear-issues");
     expect(result).toContain("Mode: issues");
   });
 
-  test("defaults mode to 'issues' when not set", () => {
-    const result = buildSystemPrompt(makeConfig({}, { sensor: "my-sensor", mode: undefined }), baseIssue);
+  test("defaults mode to 'issues' when not set", async () => {
+    const result = await buildSystemPrompt(
+      makeConfig({}, { sensor: "my-sensor", mode: undefined }),
+      baseIssue,
+      makeVars(baseIssue),
+    );
     expect(result).toContain("Mode: issues");
+  });
+
+  test("includes workspace_dir in workspace section", async () => {
+    const workspaceDir = "/home/user/.harmonica/workspaces/ENG-42-abc123";
+    const result = await buildSystemPrompt(makeConfig(), baseIssue, makeVars(baseIssue, workspaceDir));
+    expect(result).toContain(workspaceDir);
+  });
+
+  test("does not include api_key in output", async () => {
+    const config = makeConfig({}, { api_key: "secret-key-should-not-appear" });
+    const result = await buildSystemPrompt(config, baseIssue, makeVars(baseIssue));
+    expect(result).not.toContain("secret-key-should-not-appear");
   });
 });
 
@@ -154,73 +196,106 @@ describe("buildSystemPrompt — default prompt", () => {
 // ---------------------------------------------------------------------------
 
 describe("buildSystemPrompt — tracker filters", () => {
-  test("includes filter_labels when present", () => {
-    const result = buildSystemPrompt(makeConfig({}, { filter_labels: ["bug", "agent"] }), baseIssue);
+  test("includes filter_labels when present", async () => {
+    const result = await buildSystemPrompt(
+      makeConfig({}, { filter_labels: ["bug", "agent"] }),
+      baseIssue,
+      makeVars(baseIssue),
+    );
     expect(result).toContain("bug, agent");
   });
 
-  test("omits filter_labels when empty/absent", () => {
-    const result = buildSystemPrompt(makeConfig({}, { filter_labels: [] }), baseIssue);
+  test("omits filter_labels when empty/absent", async () => {
+    const result = await buildSystemPrompt(makeConfig({}, { filter_labels: [] }), baseIssue, makeVars(baseIssue));
     expect(result).not.toContain("Required labels");
   });
 
-  test("includes filter_states when present", () => {
-    const result = buildSystemPrompt(makeConfig({}, { filter_states: ["In Progress", "In Review"] }), baseIssue);
+  test("includes filter_states when present", async () => {
+    const result = await buildSystemPrompt(
+      makeConfig({}, { filter_states: ["In Progress", "In Review"] }),
+      baseIssue,
+      makeVars(baseIssue),
+    );
     expect(result).toContain("Filtered to states: In Progress, In Review");
   });
 
-  test("includes filter_project when present", () => {
-    const result = buildSystemPrompt(makeConfig({}, { filter_project: "Q3 Backlog" }), baseIssue);
+  test("includes filter_project when present", async () => {
+    const result = await buildSystemPrompt(
+      makeConfig({}, { filter_project: "Q3 Backlog" }),
+      baseIssue,
+      makeVars(baseIssue),
+    );
     expect(result).toContain("Filtered to project: Q3 Backlog");
   });
 
-  test("includes filter_assignees when present", () => {
-    const result = buildSystemPrompt(makeConfig({}, { filter_assignees: ["Adam V", "Jane S"] }), baseIssue);
+  test("includes filter_assignees when present", async () => {
+    const result = await buildSystemPrompt(
+      makeConfig({}, { filter_assignees: ["Adam V", "Jane S"] }),
+      baseIssue,
+      makeVars(baseIssue),
+    );
     expect(result).toContain("Filtered to assignees: Adam V, Jane S");
   });
 
-  test("includes filter_milestone when present", () => {
-    const result = buildSystemPrompt(makeConfig({}, { filter_milestone: "v2.0" }), baseIssue);
+  test("includes filter_milestone when present", async () => {
+    const result = await buildSystemPrompt(
+      makeConfig({}, { filter_milestone: "v2.0" }),
+      baseIssue,
+      makeVars(baseIssue),
+    );
     expect(result).toContain("Filtered to milestone: v2.0");
   });
 
-  test("includes filter_base_branch when present", () => {
-    const result = buildSystemPrompt(makeConfig({}, { filter_base_branch: "main" }), baseIssue);
+  test("includes filter_base_branch when present", async () => {
+    const result = await buildSystemPrompt(
+      makeConfig({}, { filter_base_branch: "main" }),
+      baseIssue,
+      makeVars(baseIssue),
+    );
     expect(result).toContain("Filtered to base branch: main");
   });
 
-  test("includes filter_draft=true as 'drafts only'", () => {
-    const result = buildSystemPrompt(makeConfig({}, { filter_draft: true }), baseIssue);
+  test("includes filter_draft=true as 'drafts only'", async () => {
+    const result = await buildSystemPrompt(makeConfig({}, { filter_draft: true }), baseIssue, makeVars(baseIssue));
     expect(result).toContain("Draft filter: drafts only");
   });
 
-  test("includes filter_draft=false as 'non-drafts only'", () => {
-    const result = buildSystemPrompt(makeConfig({}, { filter_draft: false }), baseIssue);
+  test("includes filter_draft=false as 'non-drafts only'", async () => {
+    const result = await buildSystemPrompt(makeConfig({}, { filter_draft: false }), baseIssue, makeVars(baseIssue));
     expect(result).toContain("Draft filter: non-drafts only");
   });
 
-  test("omits filter_draft when undefined", () => {
-    const result = buildSystemPrompt(makeConfig({}, { filter_draft: undefined }), baseIssue);
+  test("omits filter_draft when undefined", async () => {
+    const result = await buildSystemPrompt(makeConfig({}, { filter_draft: undefined }), baseIssue, makeVars(baseIssue));
     expect(result).not.toContain("Draft filter");
   });
 
-  test("includes filter_base_branch independent of filter_milestone", () => {
+  test("includes filter_base_branch independent of filter_milestone", async () => {
     // Regression: filter_base_branch must not be nested inside the filter_milestone block
-    const result = buildSystemPrompt(
+    const result = await buildSystemPrompt(
       makeConfig({}, { filter_milestone: undefined, filter_base_branch: "develop" }),
       baseIssue,
+      makeVars(baseIssue),
     );
     expect(result).toContain("Filtered to base branch: develop");
     expect(result).not.toContain("Filtered to milestone");
   });
 
-  test("includes active_states when present", () => {
-    const result = buildSystemPrompt(makeConfig({}, { active_states: ["In Progress"] }), baseIssue);
+  test("includes active_states when present", async () => {
+    const result = await buildSystemPrompt(
+      makeConfig({}, { active_states: ["In Progress"] }),
+      baseIssue,
+      makeVars(baseIssue),
+    );
     expect(result).toContain("Active states: In Progress");
   });
 
-  test("includes terminal_states when present", () => {
-    const result = buildSystemPrompt(makeConfig({}, { terminal_states: ["Done", "Cancelled"] }), baseIssue);
+  test("includes terminal_states when present", async () => {
+    const result = await buildSystemPrompt(
+      makeConfig({}, { terminal_states: ["Done", "Cancelled"] }),
+      baseIssue,
+      makeVars(baseIssue),
+    );
     expect(result).toContain("Terminal states: Done, Cancelled");
   });
 });
