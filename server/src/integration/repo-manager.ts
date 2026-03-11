@@ -160,7 +160,7 @@ export class RepoManager {
       await this.ensureBareCone(info);
     }
 
-    // Remove repos no longer in config (don't delete on-disk — just unregister)
+  private async ensureBareClone(info: RepoInfo): Promise<void> {
     for (const name of this.repos.keys()) {
       if (!(name in config)) {
         logger.info("repo removed from config, unregistering", { name });
