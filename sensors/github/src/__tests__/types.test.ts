@@ -142,6 +142,18 @@ describe("matchesGitHubIssueFilters", () => {
     });
     expect(matchesGitHubIssueFilters(issue, config)).toBe(true);
   });
+
+  test("case-insensitive: filter 'Alice' matches login 'alice'", () => {
+    const issue = makeIssue({ assignees: [{ login: "alice" }] });
+    const config = baseTrackerConfig({ filter_assignees: ["Alice"] });
+    expect(matchesGitHubIssueFilters(issue, config)).toBe(true);
+  });
+
+  test("case-insensitive: filter 'alice' matches login 'ALICE'", () => {
+    const issue = makeIssue({ assignees: [{ login: "ALICE" }] });
+    const config = baseTrackerConfig({ filter_assignees: ["alice"] });
+    expect(matchesGitHubIssueFilters(issue, config)).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -190,6 +202,18 @@ describe("matchesGitHubPRFilters", () => {
     const config = baseTrackerConfig({ filter_base_branch: "main" });
     expect(matchesGitHubPRFilters(pr, config)).toBe(true);
   });
+
+  test("case-insensitive: filter 'Alice' matches login 'alice'", () => {
+    const pr = makePR({ assignees: [{ login: "alice" }] });
+    const config = baseTrackerConfig({ filter_assignees: ["Alice"] });
+    expect(matchesGitHubPRFilters(pr, config)).toBe(true);
+  });
+
+  test("case-insensitive: filter 'alice' matches login 'ALICE'", () => {
+    const pr = makePR({ assignees: [{ login: "ALICE" }] });
+    const config = baseTrackerConfig({ filter_assignees: ["alice"] });
+    expect(matchesGitHubPRFilters(pr, config)).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -227,15 +251,21 @@ describe("matchesGitHubProjectItemFilters", () => {
     expect(matchesGitHubProjectItemFilters(item, config)).toBe(false);
   });
 
-  test("returns false when node has empty assignees array but filter is set", () => {
-    const item = makeProjectItem({ assignees: [] });
-    const config = baseTrackerConfig({ filter_assignees: ["alice"] });
-    expect(matchesGitHubProjectItemFilters(item, config)).toBe(false);
-  });
-
   test("returns true when multiple assignees and at least one matches", () => {
     const item = makeProjectItem({ assignees: [{ login: "charlie" }, { login: "bob" }] });
     const config = baseTrackerConfig({ filter_assignees: ["alice", "bob"] });
+    expect(matchesGitHubProjectItemFilters(item, config)).toBe(true);
+  });
+
+  test("case-insensitive: filter 'Alice' matches login 'alice'", () => {
+    const item = makeProjectItem({ assignees: [{ login: "alice" }] });
+    const config = baseTrackerConfig({ filter_assignees: ["Alice"] });
+    expect(matchesGitHubProjectItemFilters(item, config)).toBe(true);
+  });
+
+  test("case-insensitive: filter 'alice' matches login 'ALICE'", () => {
+    const item = makeProjectItem({ assignees: [{ login: "ALICE" }] });
+    const config = baseTrackerConfig({ filter_assignees: ["alice"] });
     expect(matchesGitHubProjectItemFilters(item, config)).toBe(true);
   });
 });

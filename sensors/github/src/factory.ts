@@ -13,8 +13,7 @@ export function createGitHubSensor(config: GitHubSensorConfig): Sensor {
         `GitHub sensor (${owner}/${repo}) in "projects" mode requires a "project" name in the sensor config.`,
       );
     }
-    const resolveAssignees = (config.assignees?.length ?? 0) > 0;
-    const backend = createGitHubProjectsBackend(owner, config.project, token, resolveAssignees);
+    const backend = createGitHubProjectsBackend(owner, config.project, token);
     const pipeline = createGitHubProjectsPipeline(owner);
     return new PollingSensor(config, backend, pipeline);
   }

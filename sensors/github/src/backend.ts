@@ -36,7 +36,6 @@ export function createGitHubProjectsBackend(
   owner: string,
   projectName: string,
   token?: string,
-  resolveAssignees = false,
 ): SensorBackend<GitHubProjectItemNode> {
   let projectNumber: number | null = null;
 
@@ -55,7 +54,9 @@ export function createGitHubProjectsBackend(
         projectNumber = await resolveProjectNumber(owner, projectName, token);
         if (projectNumber === null) return [];
       }
-      return fetchProjectItems(owner, projectNumber, token, resolveAssignees);
+      // Always resolve assignees so that per-workflow filter_assignees (set in tracker
+      // config) works correctly even when the sensor-level `assignees` list is empty.
+      return fetchProjectItems(owner, projectNumber, token, true);
     },
     async fetchOne(id) {
       if (projectNumber === null) return null;
