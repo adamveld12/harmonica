@@ -55,6 +55,7 @@ function makeProjectItem(overrides: Partial<GitHubProjectItemNode> = {}): GitHub
     url: "https://github.com/orgs/org/projects/1/items/1",
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
+    assignees: [],
     ...overrides,
   };
 }
@@ -202,8 +203,8 @@ describe("matchesGitHubProjectItemFilters", () => {
     expect(matchesGitHubProjectItemFilters(item, config)).toBe(true);
   });
 
-  test("returns true when node has no assignees and no filter set", () => {
-    const item = makeProjectItem({ assignees: undefined });
+  test("returns true when node has empty assignees and no filter set", () => {
+    const item = makeProjectItem({ assignees: [] });
     const config = baseTrackerConfig();
     expect(matchesGitHubProjectItemFilters(item, config)).toBe(true);
   });
@@ -220,8 +221,8 @@ describe("matchesGitHubProjectItemFilters", () => {
     expect(matchesGitHubProjectItemFilters(item, config)).toBe(false);
   });
 
-  test("returns false when filter is set but node has no assignees", () => {
-    const item = makeProjectItem({ assignees: undefined });
+  test("returns false when filter is set but node has empty assignees", () => {
+    const item = makeProjectItem({ assignees: [] });
     const config = baseTrackerConfig({ filter_assignees: ["alice"] });
     expect(matchesGitHubProjectItemFilters(item, config)).toBe(false);
   });

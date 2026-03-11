@@ -45,7 +45,7 @@ export interface GitHubProjectItemNode {
   url: string;
   created_at: string;
   updated_at: string;
-  assignees?: Array<{ login: string }>;
+  assignees: Array<{ login: string }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -198,7 +198,7 @@ export function matchesGitHubPRFilters(node: GitHubPRNode, config: TrackerConfig
 
 export function matchesGitHubProjectItemFilters(node: GitHubProjectItemNode, config: TrackerConfig): boolean {
   if (config.filter_assignees?.length) {
-    const assigneeLogins = (node.assignees ?? []).map((a) => a.login);
+    const assigneeLogins = node.assignees.map((a) => a.login);
     if (!config.filter_assignees.some((fa) => assigneeLogins.includes(fa))) return false;
   }
   return true;

@@ -5,12 +5,13 @@ import type { GitHubIssueNode, GitHubPRNode, GitHubProjectItemNode } from "./typ
 // Core gh CLI wrappers
 // ---------------------------------------------------------------------------
 
-async function spawnGh(args: string[], token?: string): Promise<string> {
+async function spawnGh(args: string[], token?: string, stdin?: Blob): Promise<string> {
   const env: Record<string, string> = { ...process.env } as Record<string, string>;
   if (token) env.GH_TOKEN = token;
 
   const proc = Bun.spawn(["gh", ...args], {
     env,
+    stdin,
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -41,29 +42,9 @@ export async function ghApi<T>(path: string, token?: string): Promise<T> {
  * Returns the `data` field of the response, or throws on errors.
  */
 export async function ghApiGraphQL<T>(query: string, variables: Record<string, unknown>, token?: string): Promise<T> {
-  const env: Record<string, string> = { ...process.env } as Record<string, string>;
-  if (token) env.GH_TOKEN = token;
-
   const payload = JSON.stringify({ query, variables });
-
-  const proc = Bun.spawn(["gh", "api", "graphql", "--input", "-"], {
-    env,
-    stdin: new Blob([payload]),
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-
-  const [stdout, stderr, exitCode] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-    proc.exited,
-  ]);
-
-  if (exitCode !== 0) {
-    throw new Error(`gh api graphql failed (${exitCode}): ${stderr.trim()}`);
-  }
-
-  const response = JSON.parse(stdout) as { data: T; errors?: Array<{ message: string }> };
+  const output = await spawnGh(["api", "graphql", "--input", "-"], token, new Blob([payload]));
+  const response = JSON.parse(output) as { data: T; errors?: Array<{ message: string }> };
   if (response.errors?.length) {
     throw new Error(`GraphQL errors: ${response.errors.map((e) => e.message).join(", ")}`);
   }
@@ -224,19 +205,23 @@ async function fetchProjectItemAssignees(
 ): Promise<Map<string, Array<{ login: string }>>> {
   const result = new Map<string, Array<{ login: string }>>();
   let cursor: string | null = null;
+  const MAX_PAGES = 50;
+  let page = 0;
 
   try {
     do {
+      if (++page > MAX_PAGES) {
+        logger.warn("github project item assignees pagination limit reached", { owner, projectNumber, MAX_PAGES });
+        break;
+      }
+
       const data: ProjectItemAssigneesResponse = await ghApiGraphQL<ProjectItemAssigneesResponse>(
         PROJECT_ITEM_ASSIGNEES_QUERY,
         { owner, number: projectNumber, cursor },
         token,
       );
 
-      const items: ProjectItemAssigneesResponse["repositoryOwner"] extends null | undefined
-        ? never
-        : NonNullable<NonNullable<ProjectItemAssigneesResponse["repositoryOwner"]>["projectV2"]>["items"] | undefined =
-        data.repositoryOwner?.projectV2?.items;
+      const items = data.repositoryOwner?.projectV2?.items;
       if (!items) break;
 
       for (const node of items.nodes) {
@@ -260,8 +245,9 @@ export async function fetchProjectItems(
   owner: string,
   projectNumber: number,
   token?: string,
+  resolveAssignees = false,
 ): Promise<GitHubProjectItemNode[]> {
-  logger.debug("github fetch project items", { owner, projectNumber });
+  logger.debug("github fetch project items", { owner, projectNumber, resolveAssignees });
   try {
     const output = await spawnGh(
       ["project", "item-list", String(projectNumber), "--owner", owner, "--format", "json"],
@@ -269,8 +255,10 @@ export async function fetchProjectItems(
     );
     const data = JSON.parse(output) as GhProjectItemsOutput;
 
-    // Fetch assignees via GraphQL and merge into items
-    const assigneeMap = await fetchProjectItemAssignees(owner, projectNumber, token);
+    // Only fetch assignees via GraphQL when filtering by assignee is needed
+    const assigneeMap = resolveAssignees
+      ? await fetchProjectItemAssignees(owner, projectNumber, token)
+      : new Map<string, Array<{ login: string }>>();
 
     const items: GitHubProjectItemNode[] = data.items.map((item) => ({
       id: item.id,

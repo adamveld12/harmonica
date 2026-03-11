@@ -36,6 +36,7 @@ export function createGitHubProjectsBackend(
   owner: string,
   projectName: string,
   token?: string,
+  resolveAssignees = false,
 ): SensorBackend<GitHubProjectItemNode> {
   let projectNumber: number | null = null;
 
@@ -54,11 +55,11 @@ export function createGitHubProjectsBackend(
         projectNumber = await resolveProjectNumber(owner, projectName, token);
         if (projectNumber === null) return [];
       }
-      return fetchProjectItems(owner, projectNumber, token);
+      return fetchProjectItems(owner, projectNumber, token, resolveAssignees);
     },
     async fetchOne(id) {
       if (projectNumber === null) return null;
-      const items = await fetchProjectItems(owner, projectNumber, token);
+      const items = await fetchProjectItems(owner, projectNumber, token, resolveAssignees);
       return items.find((item) => item.id === id) ?? null;
     },
   };
