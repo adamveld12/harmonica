@@ -157,7 +157,17 @@ export class WorkflowManager {
     });
 
     const state = createState();
-    const orchestrator = new Orchestrator(config, tracker, runner, workspaceManager, workflow, state, this.db, id, this.repoManager);
+    const orchestrator = new Orchestrator(
+      config,
+      tracker,
+      runner,
+      workspaceManager,
+      workflow,
+      state,
+      this.db,
+      id,
+      this.repoManager,
+    );
 
     if (this.notifyHandler) {
       const handler = this.notifyHandler;
