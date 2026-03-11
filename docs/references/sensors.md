@@ -48,17 +48,18 @@ Sensors use a discriminated union on `type`. Every sensor shares the common poll
 
 Requires the `gh` CLI to be installed and authenticated (`gh auth login`), or a PAT via `token`.
 
-| Field             | Type                                            | Default    | Description                                                                                                    |
-| ----------------- | ----------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------- |
-| `type`            | `"github"`                                      | —          | **Required.** Sensor type.                                                                                     |
-| `owner`           | `string`                                        | —          | **Required.** GitHub organization or user name (e.g. `"acme"`).                                                |
-| `repo`            | `string`                                        | —          | **Required.** Repository name (e.g. `"widget"`).                                                               |
-| `mode`            | `"issues"` \| `"pull_requests"` \| `"projects"` | `"issues"` | What to poll: open issues, open PRs, or GitHub Projects v2 items.                                              |
-| `project`         | `string`                                        | —          | **Required when `mode: projects`.** GitHub Project name (e.g. `"Q3 Roadmap"`).                                 |
-| `token`           | `string`                                        | —          | Personal access token. If omitted, uses `GH_TOKEN` env var or `gh` CLI credentials.                            |
-| `poll_interval_s` | `number`                                        | `30`       | Seconds between GitHub API polls.                                                                              |
-| `refresh_ttl_s`   | `number`                                        | `5`        | Minimum seconds between forced refresh requests.                                                               |
-| `active_states`   | `string[]`                                      | —          | For `mode: projects` only — project item status values to treat as active. Required to dispatch project items. |
+| Field             | Type                                            | Default    | Description                                                                                                                         |
+| ----------------- | ----------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `type`            | `"github"`                                      | —          | **Required.** Sensor type.                                                                                                          |
+| `owner`           | `string`                                        | —          | **Required.** GitHub organization or user name (e.g. `"acme"`).                                                                    |
+| `repo`            | `string`                                        | —          | **Required.** Repository name (e.g. `"widget"`).                                                                                   |
+| `mode`            | `"issues"` \| `"pull_requests"` \| `"projects"` | `"issues"` | What to poll: open issues, open PRs, or GitHub Projects v2 items.                                                                  |
+| `project`         | `string`                                        | —          | **Required when `mode: projects`.** GitHub Project name (e.g. `"Q3 Roadmap"`).                                                     |
+| `token`           | `string`                                        | —          | Personal access token. If omitted, uses `GH_TOKEN` env var or `gh` CLI credentials.                                                |
+| `poll_interval_s` | `number`                                        | `30`       | Seconds between GitHub API polls.                                                                                                   |
+| `refresh_ttl_s`   | `number`                                        | `5`        | Minimum seconds between forced refresh requests.                                                                                    |
+| `active_states`   | `string[]`                                      | —          | (`mode: projects` only) Project item status values to treat as active. Required to dispatch project items.                          |
+| `assignees`       | `string[]`                                      | —          | GitHub login usernames to filter by (OR logic). Inherited as the default `filter_assignees` for workflows. All modes supported.     |
 
 ## Example: Multiple Sensors (Linear + GitHub)
 
@@ -87,6 +88,8 @@ gh-issues:
   repo: widget
   mode: issues
   poll_interval_s: 30
+  assignees:
+    - "alice"
 
 gh-prs:
   type: github
@@ -138,3 +141,4 @@ tracker:
 - **Sharing:** Multiple workflows referencing the same sensor share its API connection and poll loop. This reduces redundant API calls to Linear.
 - **`active_states` is fetch scope only:** The sensor's `active_states` controls which states are requested from the Linear API. It does not determine whether an item is considered complete. Terminal state classification is configured per-workflow via `tracker.terminal_states` in the workflow frontmatter.
 - **Environment variables:** Use `${VAR}` syntax in `api_key` and other string fields. If the variable is not set, the literal `${VAR}` string is left intact (no error is thrown).
+- **Assignee field differences:** The Linear sensor's `assignees` field takes Linear **display names** (e.g. `"Adam Veldhousen"`), while the GitHub sensor's `assignees` field takes GitHub **login usernames** (e.g. `"alice"`). Both fields propagate as the default `filter_assignees` for workflows using that sensor, and can be overridden per workflow.

@@ -138,6 +138,43 @@ Status: {{ item.stateLabel }}
 Workspace: `{{ workspace_dir }}`
 ```
 
+## Filtering by assignee
+
+GitHub sensor `assignees` uses GitHub login usernames (not display names). This is different from the Linear sensor, which uses Linear display names.
+
+### Set a sensor-level default
+
+Add `assignees` to the sensor in `sensors.yaml` to filter all workflows that reference it:
+
+```yaml
+# .agents/sensors.yaml
+gh-issues:
+  type: github
+  owner: myorg
+  repo: myrepo
+  mode: issues
+  poll_interval_s: 30
+  assignees:
+    - "alice"
+    - "bob"
+```
+
+This applies to all modes (`issues`, `pull_requests`, `projects`). The value propagates as the default `filter_assignees` for every workflow using this sensor.
+
+### Override per workflow
+
+A workflow can replace the sensor-level assignees with its own list:
+
+```yaml
+tracker:
+  type: github
+  sensor: gh-issues
+  filter_assignees:
+    - "carol" # overrides the sensor-level assignees for this workflow only
+```
+
+Omit `filter_assignees` in the workflow to inherit the sensor's `assignees` list. Set it to an explicit list to restrict or broaden the set for that workflow.
+
 ## Combining GitHub and Linear sensors
 
 You can run multiple workflow files simultaneously, mixing sensor types:

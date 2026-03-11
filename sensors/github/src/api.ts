@@ -5,12 +5,13 @@ import type { GitHubIssueNode, GitHubPRNode, GitHubProjectItemNode } from "./typ
 // Core gh CLI wrappers
 // ---------------------------------------------------------------------------
 
-async function spawnGh(args: string[], token?: string): Promise<string> {
+async function spawnGh(args: string[], token?: string, stdin?: Blob): Promise<string> {
   const env: Record<string, string> = { ...process.env } as Record<string, string>;
   if (token) env.GH_TOKEN = token;
 
   const proc = Bun.spawn(["gh", ...args], {
     env,
+    stdin,
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -34,6 +35,20 @@ async function spawnGh(args: string[], token?: string): Promise<string> {
 export async function ghApi<T>(path: string, token?: string): Promise<T> {
   const output = await spawnGh(["api", path], token);
   return JSON.parse(output) as T;
+}
+
+/**
+ * Execute a GraphQL query via `gh api graphql --input -` (reads JSON from stdin).
+ * Returns the `data` field of the response, or throws on errors.
+ */
+export async function ghApiGraphQL<T>(query: string, variables: Record<string, unknown>, token?: string): Promise<T> {
+  const payload = JSON.stringify({ query, variables });
+  const output = await spawnGh(["api", "graphql", "--input", "-"], token, new Blob([payload]));
+  const response = JSON.parse(output) as { data: T; errors?: Array<{ message: string }> };
+  if (response.errors?.length) {
+    throw new Error(`GraphQL errors: ${response.errors.map((e) => e.message).join(", ")}`);
+  }
+  return response.data;
 }
 
 /**
@@ -138,18 +153,113 @@ interface GhProjectItemsOutput {
   }>;
 }
 
+// GraphQL query to fetch project item assignees for both org and user owners.
+const PROJECT_ITEM_ASSIGNEES_QUERY = `
+  query GetProjectItemAssignees($owner: String!, $number: Int!, $cursor: String) {
+    repositoryOwner(login: $owner) {
+      ... on Organization {
+        projectV2(number: $number) { ...ProjectItems }
+      }
+      ... on User {
+        projectV2(number: $number) { ...ProjectItems }
+      }
+    }
+  }
+  fragment ProjectItems on ProjectV2 {
+    items(first: 100, after: $cursor) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        id
+        content {
+          ... on Issue { assignees(first: 10) { nodes { login } } }
+          ... on PullRequest { assignees(first: 10) { nodes { login } } }
+        }
+      }
+    }
+  }
+`;
+
+interface ProjectItemAssigneesResponse {
+  repositoryOwner: {
+    projectV2?: {
+      items: {
+        pageInfo: { hasNextPage: boolean; endCursor: string | null };
+        nodes: Array<{
+          id: string;
+          content: { assignees?: { nodes: Array<{ login: string }> } } | null;
+        }>;
+      };
+    } | null;
+  } | null;
+}
+
+/**
+ * Fetch a map of project item ID → assignee logins via GraphQL.
+ * Handles pagination. Gracefully returns an empty map on error so that
+ * `fetchProjectItems` can still return items without assignee data.
+ */
+async function fetchProjectItemAssignees(
+  owner: string,
+  projectNumber: number,
+  token?: string,
+): Promise<Map<string, Array<{ login: string }>>> {
+  const result = new Map<string, Array<{ login: string }>>();
+  let cursor: string | null = null;
+  const MAX_PAGES = 50;
+  let page = 0;
+
+  try {
+    do {
+      if (++page > MAX_PAGES) {
+        logger.warn("github project item assignees pagination limit reached", { owner, projectNumber, MAX_PAGES });
+        break;
+      }
+
+      const data: ProjectItemAssigneesResponse = await ghApiGraphQL<ProjectItemAssigneesResponse>(
+        PROJECT_ITEM_ASSIGNEES_QUERY,
+        { owner, number: projectNumber, cursor },
+        token,
+      );
+
+      const items = data.repositoryOwner?.projectV2?.items;
+      if (!items) break;
+
+      for (const node of items.nodes) {
+        result.set(node.id, node.content?.assignees?.nodes ?? []);
+      }
+
+      cursor = items.pageInfo.hasNextPage ? items.pageInfo.endCursor : null;
+    } while (cursor !== null);
+  } catch (err) {
+    logger.warn("github fetch project item assignees failed, continuing without assignee data", {
+      owner,
+      projectNumber,
+      error: String(err),
+    });
+  }
+
+  return result;
+}
+
 export async function fetchProjectItems(
   owner: string,
   projectNumber: number,
   token?: string,
+  resolveAssignees = false,
 ): Promise<GitHubProjectItemNode[]> {
-  logger.debug("github fetch project items", { owner, projectNumber });
+  logger.debug("github fetch project items", { owner, projectNumber, resolveAssignees });
   try {
     const output = await spawnGh(
       ["project", "item-list", String(projectNumber), "--owner", owner, "--format", "json"],
       token,
     );
     const data = JSON.parse(output) as GhProjectItemsOutput;
+
+    // Only fetch assignees via GraphQL when filtering by assignee is needed
+    const assigneeMap = resolveAssignees
+      ? await fetchProjectItemAssignees(owner, projectNumber, token)
+      : new Map<string, Array<{ login: string }>>();
+
     const items: GitHubProjectItemNode[] = data.items.map((item) => ({
       id: item.id,
       title: item.title,
@@ -158,6 +268,7 @@ export async function fetchProjectItems(
       url: item.url,
       created_at: item.createdAt,
       updated_at: item.updatedAt,
+      assignees: assigneeMap.get(item.id) ?? [],
     }));
     logger.info("github project items fetched", { owner, projectNumber, total: items.length });
     return items;

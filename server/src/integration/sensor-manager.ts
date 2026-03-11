@@ -69,6 +69,14 @@ export class SensorManager {
       }
     }
 
+    // GitHub-specific: propagate sensor-level assignees as filter_assignees fallback
+    if (sensorConfig.type === "github") {
+      const rc = rawConfig as Record<string, unknown>;
+      if (!resolvedConfig.filter_assignees) {
+        resolvedConfig.filter_assignees = rc["assignees"] as string[] | undefined;
+      }
+    }
+
     const tracker = new SensorTrackerClientImpl(sensor, resolvedConfig);
     return { tracker, resolvedConfig };
   }

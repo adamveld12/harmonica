@@ -54,11 +54,15 @@ export function createGitHubProjectsBackend(
         projectNumber = await resolveProjectNumber(owner, projectName, token);
         if (projectNumber === null) return [];
       }
-      return fetchProjectItems(owner, projectNumber, token);
+      // Always resolve assignees so that per-workflow filter_assignees (set in tracker
+      // config) works correctly even when the sensor-level `assignees` list is empty.
+      return fetchProjectItems(owner, projectNumber, token, true);
     },
     async fetchOne(id) {
       if (projectNumber === null) return null;
-      const items = await fetchProjectItems(owner, projectNumber, token);
+      // Fetch without assignees — fetchOne is only used to refresh item state,
+      // not to re-run assignee filters, so the GraphQL call is unnecessary here.
+      const items = await fetchProjectItems(owner, projectNumber, token, false);
       return items.find((item) => item.id === id) ?? null;
     },
   };

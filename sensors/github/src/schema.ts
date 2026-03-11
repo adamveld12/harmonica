@@ -10,6 +10,7 @@ export const GitHubSensorSchema = z.object({
   poll_interval_s: z.number().default(30),
   refresh_ttl_s: z.number().default(5),
   active_states: z.array(z.string()).optional(),
+  assignees: z.array(z.string()).optional(),
 });
 
 export type GitHubSensorConfig = z.infer<typeof GitHubSensorSchema>;

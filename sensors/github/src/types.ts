@@ -45,6 +45,7 @@ export interface GitHubProjectItemNode {
   url: string;
   created_at: string;
   updated_at: string;
+  assignees: Array<{ login: string }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -173,8 +174,8 @@ export function matchesGitHubIssueFilters(node: GitHubIssueNode, config: Tracker
     if (!config.filter_labels.every((fl) => nodeLabels.includes(fl))) return false;
   }
   if (config.filter_assignees?.length) {
-    const assigneeLogins = node.assignees.map((a) => a.login);
-    if (!config.filter_assignees.some((fa) => assigneeLogins.includes(fa))) return false;
+    const assigneeLogins = node.assignees.map((a) => a.login.toLowerCase());
+    if (!config.filter_assignees.some((fa) => assigneeLogins.includes(fa.toLowerCase()))) return false;
   }
   if (config.filter_milestone && node.milestone?.title !== config.filter_milestone) return false;
   return true;
@@ -186,8 +187,8 @@ export function matchesGitHubPRFilters(node: GitHubPRNode, config: TrackerConfig
     if (!config.filter_labels.every((fl) => nodeLabels.includes(fl))) return false;
   }
   if (config.filter_assignees?.length) {
-    const assigneeLogins = node.assignees.map((a) => a.login);
-    if (!config.filter_assignees.some((fa) => assigneeLogins.includes(fa))) return false;
+    const assigneeLogins = node.assignees.map((a) => a.login.toLowerCase());
+    if (!config.filter_assignees.some((fa) => assigneeLogins.includes(fa.toLowerCase()))) return false;
   }
   if (config.filter_base_branch && node.base.ref !== config.filter_base_branch) return false;
   if (config.filter_draft !== undefined && node.draft !== config.filter_draft) return false;
@@ -195,6 +196,10 @@ export function matchesGitHubPRFilters(node: GitHubPRNode, config: TrackerConfig
   return true;
 }
 
-export function matchesGitHubProjectItemFilters(_node: GitHubProjectItemNode, _config: TrackerConfig): boolean {
+export function matchesGitHubProjectItemFilters(node: GitHubProjectItemNode, config: TrackerConfig): boolean {
+  if (config.filter_assignees?.length) {
+    const assigneeLogins = node.assignees.map((a) => a.login.toLowerCase());
+    if (!config.filter_assignees.some((fa) => assigneeLogins.includes(fa.toLowerCase()))) return false;
+  }
   return true;
 }
