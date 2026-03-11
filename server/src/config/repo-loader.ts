@@ -12,6 +12,9 @@ export async function loadRepos(basePath: string): Promise<ReposFileConfig> {
   const file = Bun.file(filePath);
 
   if (!(await file.exists())) {
+    logger.warn("repos file not found", { path: filePath });
+    return {};
+  }
   if (!(await file.exists())) {
     logger.warn("repos file not found", { path: filePath });
     return {};
