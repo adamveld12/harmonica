@@ -15,6 +15,13 @@ export const AgentSchema = z
     allowed_tools: z.array(z.string()).optional(),
     auth_method: z.enum(["api_key", "subscription"]).default("subscription"),
     api_key: z.string().optional(),
+    /**
+     * System prompt prepended to the workflow prompt on the first turn.
+     * - `undefined` (default): use the built-in pre-canned system prompt
+     * - `""` (empty string): disable the system prompt entirely
+     * - Any non-empty string: use as the system prompt verbatim
+     */
+    system_prompt: z.string().optional(),
   })
   .default({
     model: "claude-sonnet-4-20250514",

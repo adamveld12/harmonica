@@ -39,17 +39,18 @@ Controls which Linear work items are dispatched to agents. Connection details (A
 
 Controls the Claude Code agent session.
 
-| Field                 | Type                                                    | Default                      | Description                                                |
-| --------------------- | ------------------------------------------------------- | ---------------------------- | ---------------------------------------------------------- |
-| `model`               | `string`                                                | `"claude-sonnet-4-20250514"` | Claude model ID                                            |
-| `max_turns`           | `number`                                                | `50`                         | Maximum agent turns before forced exit                     |
-| `turn_timeout_s`      | `number`                                                | `600`                        | Seconds per turn before considered stalled                 |
-| `max_retry_backoff_s` | `number`                                                | `300`                        | Maximum retry delay (5 min)                                |
-| `max_concurrency`     | `number`                                                | `3`                          | Maximum parallel workers                                   |
-| `permission_mode`     | `"bypassPermissions"` \| `"default"` \| `"acceptEdits"` | `"bypassPermissions"`        | Agent tool permission mode                                 |
-| `allowed_tools`       | `string[]`                                              | —                            | Whitelist of tool names; omit to allow all tools           |
-| `auth_method`         | `"api_key"` \| `"subscription"`                         | `"subscription"`             | How to authenticate with Anthropic                         |
-| `api_key`             | `string`                                                | —                            | Anthropic API key; only needed when `auth_method: api_key` |
+| Field                 | Type                                                    | Default                      | Description                                                                                                                                                                                     |
+| --------------------- | ------------------------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `model`               | `string`                                                | `"claude-sonnet-4-20250514"` | Claude model ID                                                                                                                                                                                 |
+| `max_turns`           | `number`                                                | `50`                         | Maximum agent turns before forced exit                                                                                                                                                          |
+| `turn_timeout_s`      | `number`                                                | `600`                        | Seconds per turn before considered stalled                                                                                                                                                      |
+| `max_retry_backoff_s` | `number`                                                | `300`                        | Maximum retry delay (5 min)                                                                                                                                                                     |
+| `max_concurrency`     | `number`                                                | `3`                          | Maximum parallel workers                                                                                                                                                                        |
+| `permission_mode`     | `"bypassPermissions"` \| `"default"` \| `"acceptEdits"` | `"bypassPermissions"`        | Agent tool permission mode                                                                                                                                                                      |
+| `allowed_tools`       | `string[]`                                              | —                            | Whitelist of tool names; omit to allow all tools                                                                                                                                                |
+| `auth_method`         | `"api_key"` \| `"subscription"`                         | `"subscription"`             | How to authenticate with Anthropic                                                                                                                                                              |
+| `api_key`             | `string`                                                | —                            | Anthropic API key; only needed when `auth_method: api_key`                                                                                                                                      |
+| `system_prompt`       | `string`                                                | —                            | System prompt prepended to the first turn. Omit = built-in default, `""` = disabled, non-empty string = custom (Liquid variables supported). See [System Prompt Reference](./system-prompt.md). |
 
 ### workspace
 
