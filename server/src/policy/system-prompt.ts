@@ -44,6 +44,14 @@ function buildDefaultSystemPrompt(config: Config, item: WorkItem): string {
   }
   if (tracker.filter_milestone) {
     sensorLines.push(`- Filtered to milestone: ${tracker.filter_milestone}`);
+  if (tracker.filter_milestone) {
+    sensorLines.push(`- Filtered to milestone: ${tracker.filter_milestone}`);
+  }
+  if (tracker.filter_base_branch) {
+    sensorLines.push(`- Filtered to base branch: ${tracker.filter_base_branch}`);
+  }
+  if (tracker.filter_draft !== undefined) {
+    sensorLines.push(`- Draft filter: ${tracker.filter_draft ? "drafts only" : "non-drafts only"}`);
   }
   if (tracker.active_states?.length) {
     sensorLines.push(`- Active states: ${tracker.active_states.join(", ")}`);
