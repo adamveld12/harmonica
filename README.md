@@ -59,6 +59,34 @@ Harmonica implements the [OpenAI Symphony spec](https://github.com/openai/sympho
 
 ## Installation
 
+### Docker (recommended for sandboxed environments)
+
+Pull and run the image directly — no local Bun, `gh`, or `pnpm` installation needed:
+
+```bash
+docker run --rm \
+  -e LINEAR_API_KEY=lin_api_... \
+  -e ANTHROPIC_API_KEY=sk-ant-... \
+  -v "$PWD/.agents/sensors.yaml:/data/.agents/sensors.yaml:ro" \
+  -v "$PWD/.agents/workflows:/data/workflows" \
+  ghcr.io/adamveld12/harmonica:latest
+```
+
+Mount `~/.claude` to use a Claude Pro/Max subscription instead of an API key:
+
+```bash
+docker run --rm \
+  -e LINEAR_API_KEY=lin_api_... \
+  -v "$HOME/.claude:/home/harmonica/.claude:ro" \
+  -v "$PWD/.agents/sensors.yaml:/data/.agents/sensors.yaml:ro" \
+  -v "$PWD/.agents/workflows:/data/workflows" \
+  ghcr.io/adamveld12/harmonica:latest
+```
+
+See the [Docker guide](docs/guides/docker.md) for volume mounts, dashboard setup, Docker Compose, and SSH key usage.
+
+### npm (global install)
+
 Install globally from npm (requires [Bun](https://bun.sh/) >= 1.0):
 
 ```bash

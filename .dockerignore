@@ -1,0 +1,43 @@
+# version control
+.git
+.gitignore
+
+# build outputs (rebuilt in Docker)
+server/dist
+ui/dist
+cli/dist
+
+# local env / secrets
+.env
+.env.*
+*.local
+
+# editor & OS
+.DS_Store
+.vscode
+.idea
+*.swp
+*.swo
+
+# logs
+*.log
+npm-debug.log*
+
+# test artifacts
+coverage
+.nyc_output
+
+# temp / cache
+node_modules
+node_modules/.cache
+.turbo
+.husky
+
+# docs (not needed in image)
+docs
+
+# CI
+.github
+
+# workspace data (runtime volume)
+.harmonica
