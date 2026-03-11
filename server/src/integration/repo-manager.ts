@@ -90,7 +90,19 @@ export class RepoManager {
       const addExisting = await Bun.spawn(
         ["git", "worktree", "add", worktreePath, branchName],
         { cwd: gitDir, stdout: "pipe", stderr: "pipe" },
-      ).exited;
+    if (addResult !== 0) {
+      // Branch may already exist from a previous stale run — try without -b
+      const fallbackProc = Bun.spawn(
+        ["git", "worktree", "add", worktreePath, branchName],
+        { cwd: gitDir, stdout: "pipe", stderr: "pipe" },
+      );
+      const addExisting = await fallbackProc.exited;
+
+      if (addExisting !== 0) {
+        const stderr = await new Response(fallbackProc.stderr).text();
+        throw new Error(`Failed to create worktree at ${worktreePath} for branch ${branchName}: ${stderr.trim()}`);
+      }
+    }
 
       if (addExisting !== 0) {
     const addProc = Bun.spawn(
