@@ -61,7 +61,10 @@ export class Orchestrator {
   private consecutivePollFailures = 0;
   private pendingResults = new Set<Promise<void>>();
   /** Tracks worktree metadata for items that used workspace.repo */
-  private worktreeRegistry = new Map<string, { repoName: string; branchName: string; repoUrl: string; repoDefaultBranch: string }>();
+  private worktreeRegistry = new Map<
+    string,
+    { repoName: string; branchName: string; repoUrl: string; repoDefaultBranch: string }
+  >();
   onNotify?: (event: NotificationEvent) => void;
 
   constructor(
@@ -135,6 +138,24 @@ export class Orchestrator {
     };
 
     return shutdown;
+  }
+
+  /** Build repo context fields for hook and worker prompt from worktree registry. */
+  private buildRepoContext(itemId: string) {
+    const meta = this.worktreeRegistry.get(itemId);
+    return meta
+      ? {
+          repoUrl: meta.repoUrl,
+          repoName: meta.repoName,
+          repoDefaultBranch: meta.repoDefaultBranch,
+          branchName: meta.branchName,
+        }
+      : {
+          repoUrl: this.config.workspace.repo_url,
+          repoName: null,
+          repoDefaultBranch: null,
+          branchName: null,
+        };
   }
 
   private async sleep(ms: number): Promise<void> {
@@ -274,22 +295,6 @@ export class Orchestrator {
       return;
     }
 
-    // Build repo context for hooks and worker prompt
-    const worktreeMeta = this.worktreeRegistry.get(item.id);
-    const repoHookCtx = worktreeMeta
-      ? {
-          repoUrl: worktreeMeta.repoUrl,
-          repoName: worktreeMeta.repoName,
-          repoDefaultBranch: worktreeMeta.repoDefaultBranch,
-          branchName: worktreeMeta.branchName,
-        }
-      : {
-          repoUrl: this.config.workspace.repo_url,
-          repoName: null,
-          repoDefaultBranch: null,
-          branchName: null,
-        };
-
     // Add to running immediately so the dashboard shows the worker during hook execution
     let resolveWorker!: (r: WorkerResult) => void;
     let rejectWorker!: (e: unknown) => void;
@@ -353,7 +358,7 @@ export class Orchestrator {
         issueIdentifier: item.identifier,
         workspaceDir,
         sessionId: null,
-        ...repoHookCtx,
+        ...this.buildRepoContext(item.id),
         workItem: item,
         attempt: attemptNumber,
       });
@@ -368,7 +373,7 @@ export class Orchestrator {
         issueIdentifier: item.identifier,
         workspaceDir,
         sessionId: resumeSessionId,
-        ...repoHookCtx,
+        ...this.buildRepoContext(item.id),
         workItem: item,
         attempt: attemptNumber,
       });
@@ -416,10 +421,7 @@ export class Orchestrator {
       onPrUrl: (itemId, url) => setPrUrl(this.state, itemId, url),
       mcpServers,
       abortController,
-      repoName: repoHookCtx.repoName,
-      repoUrl: repoHookCtx.repoUrl,
-      repoDefaultBranch: repoHookCtx.repoDefaultBranch,
-      branchName: repoHookCtx.branchName,
+      ...this.buildRepoContext(item.id),
     });
 
     workerPromise.then(resolveWorker, rejectWorker);
@@ -507,28 +509,13 @@ export class Orchestrator {
       logger.warn("notification handler failed", { item_id: item.id, error: String(err) });
     }
 
-    const resultWorktreeMeta = this.worktreeRegistry.get(item.id);
-    const resultRepoCtx = resultWorktreeMeta
-      ? {
-          repoUrl: resultWorktreeMeta.repoUrl,
-          repoName: resultWorktreeMeta.repoName,
-          repoDefaultBranch: resultWorktreeMeta.repoDefaultBranch,
-          branchName: resultWorktreeMeta.branchName,
-        }
-      : {
-          repoUrl: this.config.workspace.repo_url,
-          repoName: null,
-          repoDefaultBranch: null,
-          branchName: null,
-        };
-
     if (workspaceDir) {
       await runHooks("after_run", this.config.hooks, {
         issueId: item.id,
         issueIdentifier: item.identifier,
         workspaceDir,
         sessionId: result.sessionId,
-        ...resultRepoCtx,
+        ...this.buildRepoContext(item.id),
         workItem: item,
         attempt: attemptNumber,
       });
@@ -553,15 +540,16 @@ export class Orchestrator {
         issueIdentifier: item.identifier,
         workspaceDir,
         sessionId: result.sessionId,
-        ...resultRepoCtx,
+        ...this.buildRepoContext(item.id),
         workItem: item,
         attempt: attemptNumber,
       });
 
-      if (resultWorktreeMeta && this.repoManager) {
+      const worktreeMeta = this.worktreeRegistry.get(item.id);
+      if (worktreeMeta && this.repoManager) {
         // Worktree-managed workspace: let RepoManager handle filesystem cleanup
         try {
-          await this.repoManager.removeWorktree(resultWorktreeMeta.repoName, workspaceDir);
+          await this.repoManager.removeWorktree(worktreeMeta.repoName, workspaceDir);
         } catch (err) {
           logger.warn("worktree removal failed, falling back to rm", { item_id: item.id, error: String(err) });
           await this.workspaceManager.removeWorkspace(workspaceDir);

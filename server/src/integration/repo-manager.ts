@@ -1,12 +1,15 @@
-import { mkdir, rm, writeFile, readdir } from "fs/promises";
-import { join, resolve } from "path";
+import { mkdir, rm, writeFile } from "fs/promises";
+import { join } from "path";
 import type { ReposFileConfig, RepoConfig } from "../config/schema.ts";
 import { logger } from "../observability/logger.ts";
 
 export interface RepoInfo {
   name: string;
   config: RepoConfig;
+  /** Absolute path to the bare clone: $configDir/repos/<name>/.bare */
   bareDir: string;
+  /** Absolute path to the repo root: $configDir/repos/<name> */
+  repoDir: string;
 }
 
 export interface WorktreeInfo {
@@ -73,79 +76,37 @@ export class RepoManager {
     const info = await this.ensureAndFetch(repoName);
     const branchName = `harm/${identifier}`.replace(/[^a-zA-Z0-9/_-]/g, "-");
 
-    await mkdir(worktreePath, { recursive: true });
     // Remove directory first — git worktree add requires empty/non-existent path
     await rm(worktreePath, { recursive: true, force: true });
 
-    const gitDir = join(info.bareDir, "..");
-
-    // Create worktree + new branch based on default branch
-    const addResult = await Bun.spawn(
-      ["git", "worktree", "add", "-b", branchName, worktreePath, `origin/${info.config.default_branch}`],
-      { cwd: gitDir, stdout: "pipe", stderr: "pipe" },
-    ).exited;
-
-    if (addResult !== 0) {
-      // Branch may already exist from a previous stale run — try without -b
-      const addExisting = await Bun.spawn(
+    // Try to create worktree + new branch based on default branch
     const addProc = Bun.spawn(
       ["git", "worktree", "add", "-b", branchName, worktreePath, `origin/${info.config.default_branch}`],
-      { cwd: gitDir, stdout: "pipe", stderr: "pipe" },
-    );
-    const addResult = await addProc.exited;
-
-    if (addResult !== 0) {
-      const firstStderr = await new Response(addProc.stderr).text();
-      logger.debug("worktree add -b failed, trying existing branch", { repo: repoName, branch: branchName, error: firstStderr.trim() });
-      // Branch may already exist from a previous stale run — try without -b
-      const fallbackProc = Bun.spawn(
-        ["git", "worktree", "add", worktreePath, branchName],
-        { cwd: gitDir, stdout: "pipe", stderr: "pipe" },
-      );
-      const addExisting = await fallbackProc.exited;
-
-      if (addExisting !== 0) {
-        const secondStderr = await new Response(fallbackProc.stderr).text();
-        throw new Error(`Failed to create worktree at ${worktreePath} for branch ${branchName}: ${secondStderr.trim()}`);
-      }
-    }
-        { cwd: gitDir, stdout: "pipe", stderr: "pipe" },
-    if (addResult !== 0) {
-      // Branch may already exist from a previous stale run — try without -b
-      const fallbackProc = Bun.spawn(
-        ["git", "worktree", "add", worktreePath, branchName],
-        { cwd: gitDir, stdout: "pipe", stderr: "pipe" },
-      );
-      const addExisting = await fallbackProc.exited;
-
-      if (addExisting !== 0) {
-        const stderr = await new Response(fallbackProc.stderr).text();
-        throw new Error(`Failed to create worktree at ${worktreePath} for branch ${branchName}: ${stderr.trim()}`);
-      }
-    }
-
-      if (addExisting !== 0) {
-    const addProc = Bun.spawn(
-      ["git", "worktree", "add", "-b", branchName, worktreePath, `origin/${info.config.default_branch}`],
-      { cwd: gitDir, stdout: "pipe", stderr: "pipe" },
+      { cwd: info.repoDir, stdout: "pipe", stderr: "pipe" },
     );
     const addResult = await addProc.exited;
 
     if (addResult !== 0) {
       const addStderr = await new Response(addProc.stderr).text();
-      logger.debug("worktree add -b failed, trying existing branch", { repo: repoName, branch: branchName, error: addStderr.trim() });
-      // Branch may already exist from a previous stale run — try without -b
-      const fallbackProc = Bun.spawn(
-        ["git", "worktree", "add", worktreePath, branchName],
-        { cwd: gitDir, stdout: "pipe", stderr: "pipe" },
-      );
-      const addExisting = await fallbackProc.exited;
+      logger.debug("worktree add -b failed, trying existing branch", {
+        repo: repoName,
+        branch: branchName,
+        stderr: addStderr.trim(),
+      });
 
-      if (addExisting !== 0) {
+      // Branch may already exist from a previous stale run — try without -b
+      const fallbackProc = Bun.spawn(["git", "worktree", "add", worktreePath, branchName], {
+        cwd: info.repoDir,
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      const fallbackResult = await fallbackProc.exited;
+
+      if (fallbackResult !== 0) {
         const fallbackStderr = await new Response(fallbackProc.stderr).text();
-        throw new Error(`Failed to create worktree at ${worktreePath} for branch ${branchName}: ${fallbackStderr.trim()}`);
-      }
-    }
+        throw new Error(
+          `Failed to create worktree at ${worktreePath} for branch ${branchName}: ${fallbackStderr.trim()}`,
+        );
       }
     }
 
@@ -165,11 +126,9 @@ export class RepoManager {
       return;
     }
 
-    const gitDir = join(info.bareDir, "..");
-
     // Force-remove the worktree from git's perspective
     const proc = Bun.spawn(["git", "worktree", "remove", "--force", worktreePath], {
-      cwd: gitDir,
+      cwd: info.repoDir,
       stdout: "pipe",
       stderr: "pipe",
     });
@@ -177,7 +136,7 @@ export class RepoManager {
 
     // Prune stale worktree metadata
     await Bun.spawn(["git", "worktree", "prune"], {
-      cwd: gitDir,
+      cwd: info.repoDir,
       stdout: "pipe",
       stderr: "pipe",
     }).exited;
@@ -190,9 +149,8 @@ export class RepoManager {
    */
   async pruneAllWorktrees(): Promise<void> {
     for (const info of this.repos.values()) {
-      const gitDir = join(info.bareDir, "..");
       await Bun.spawn(["git", "worktree", "prune"], {
-        cwd: gitDir,
+        cwd: info.repoDir,
         stdout: "pipe",
         stderr: "pipe",
       }).exited;
@@ -206,13 +164,14 @@ export class RepoManager {
   private async syncRepos(config: ReposFileConfig): Promise<void> {
     // Add or update repos
     for (const [name, repoConfig] of Object.entries(config)) {
-      const bareDir = join(this.reposBaseDir, name, ".bare");
-      const info: RepoInfo = { name, config: repoConfig, bareDir };
+      const repoDir = join(this.reposBaseDir, name);
+      const bareDir = join(repoDir, ".bare");
+      const info: RepoInfo = { name, config: repoConfig, bareDir, repoDir };
       this.repos.set(name, info);
-      await this.ensureBareCone(info);
+      await this.ensureBareClone(info);
     }
 
-  private async ensureBareClone(info: RepoInfo): Promise<void> {
+    // Remove repos that were dropped from config
     for (const name of this.repos.keys()) {
       if (!(name in config)) {
         logger.info("repo removed from config, unregistering", { name });
@@ -221,9 +180,8 @@ export class RepoManager {
     }
   }
 
-  private async ensureBareCone(info: RepoInfo): Promise<void> {
-    const repoDir = join(this.reposBaseDir, info.name);
-    await mkdir(repoDir, { recursive: true });
+  private async ensureBareClone(info: RepoInfo): Promise<void> {
+    await mkdir(info.repoDir, { recursive: true });
 
     // Check if bare clone already exists
     const headFile = Bun.file(join(info.bareDir, "HEAD"));
@@ -236,11 +194,18 @@ export class RepoManager {
 
     const cloneArgs = ["git", "clone", "--bare", info.config.url, ".bare"];
     if (info.config.fetch_depth) {
+      logger.warn(
+        "fetch_depth with bare clone+worktree may produce incomplete history; git log, blame, and merge-base may return wrong results",
+        {
+          repo: info.name,
+          fetch_depth: info.config.fetch_depth,
+        },
+      );
       cloneArgs.splice(2, 0, `--depth=${info.config.fetch_depth}`);
     }
 
     const proc = Bun.spawn(cloneArgs, {
-      cwd: repoDir,
+      cwd: info.repoDir,
       stdout: "pipe",
       stderr: "pipe",
     });
@@ -252,22 +217,22 @@ export class RepoManager {
     }
 
     // Write .git file that points to .bare — enables worktree commands from repoDir
-    await writeFile(join(repoDir, ".git"), "gitdir: ./.bare\n", "utf8");
+    await writeFile(join(info.repoDir, ".git"), "gitdir: ./.bare\n", "utf8");
 
     // Configure fetch refspec so `git fetch` updates remote-tracking branches
-    await Bun.spawn(
-      ["git", "config", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"],
-      { cwd: repoDir, stdout: "pipe", stderr: "pipe" },
-    ).exited;
+    await Bun.spawn(["git", "config", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"], {
+      cwd: info.repoDir,
+      stdout: "pipe",
+      stderr: "pipe",
+    }).exited;
 
     logger.info("bare clone complete", { repo: info.name });
   }
 
   private async fetchRepo(info: RepoInfo): Promise<void> {
-    const repoDir = join(this.reposBaseDir, info.name);
     logger.debug("fetching repo", { repo: info.name });
     const proc = Bun.spawn(["git", "fetch", "--all", "--prune"], {
-      cwd: repoDir,
+      cwd: info.repoDir,
       stdout: "pipe",
       stderr: "pipe",
     });

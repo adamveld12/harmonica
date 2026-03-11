@@ -4,6 +4,7 @@ import { watch } from "fs";
 import { SensorsFileSchema, type SensorsFileConfig } from "./schema.ts";
 import { resolveConfig } from "./resolver.ts";
 import { logger } from "../observability/logger.ts";
+import { DEBOUNCE_MS } from "./defaults.ts";
 
 const SENSORS_FILE = ".agents/sensors.yaml";
 
@@ -39,7 +40,7 @@ export function watchSensors(basePath: string, onChange: (config: SensorsFileCon
         } catch (err) {
           logger.error("sensors reload failed", { path: filePath, error: String(err) });
         }
-      }, 200);
+      }, DEBOUNCE_MS);
     });
 
     watcher.on("error", (err) => {

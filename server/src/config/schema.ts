@@ -8,7 +8,7 @@ export const RepoSchema = z.object({
   url: z.string(),
   default_branch: z.string().default("main"),
   fetch_depth: z.number().optional(),
-  fetch_interval_ms: z.number().optional(),
+  fetch_interval_ms: z.number().optional().describe("reserved for future use — not currently implemented"),
 });
 
 export const ReposFileSchema = z.record(z.string(), RepoSchema);

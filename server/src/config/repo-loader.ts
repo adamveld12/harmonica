@@ -4,6 +4,7 @@ import { watch } from "fs";
 import { ReposFileSchema, type ReposFileConfig } from "./schema.ts";
 import { resolveConfig } from "./resolver.ts";
 import { logger } from "../observability/logger.ts";
+import { DEBOUNCE_MS } from "./defaults.ts";
 
 const REPOS_FILE = ".agents/repos.yaml";
 
@@ -14,11 +15,6 @@ export async function loadRepos(basePath: string): Promise<ReposFileConfig> {
   if (!(await file.exists())) {
     logger.warn("repos file not found", { path: filePath });
     return {};
-  }
-  if (!(await file.exists())) {
-    logger.warn("repos file not found", { path: filePath });
-    return {};
-  }
   }
 
   const text = await file.text();
@@ -44,7 +40,7 @@ export function watchRepos(basePath: string, onChange: (config: ReposFileConfig)
         } catch (err) {
           logger.error("repos reload failed", { path: filePath, error: String(err) });
         }
-      }, 200);
+      }, DEBOUNCE_MS);
     });
 
     watcher.on("error", (err) => {
