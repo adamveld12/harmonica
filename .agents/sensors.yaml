@@ -4,3 +4,10 @@ gh-harmonica-issues:
   repo: harmonica
   mode: issues
   poll_interval_s: 30
+
+gh-harmonica-prs:
+  type: github
+  owner: adamveld12
+  repo: harmonica
+  mode: pull_requests
+  poll_interval_s: 30

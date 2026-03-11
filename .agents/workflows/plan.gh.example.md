@@ -10,7 +10,7 @@ tracker:
 
 agent:
   model: opus
-  max_turns: 120
+  max_turns: 60
   max_concurrency: 3
   permission_mode: bypassPermissions
   auth_method: subscription
@@ -31,14 +31,13 @@ I want you to create an indepth implementation plan for the Github issue and lea
 
 ## Workflow
 
-1. Create a branch: `git checkout -b {{ item.identifier }}/<some name>`
-2. Build up a model of what needs to happ
+1. Build up a model of what needs to happ
     - Read the complete github issue, description and comments
     - Search the code base to build up an understanding
     - Research relevant links in the issue as needed to get more context
     - Find all relevant documntation, code comments etc that need to be updated
 
-3. Create an indepth implementation plan
+2. Create an in depth implementation plan
     - Testing
     - Documentation updates
     - Code implementation

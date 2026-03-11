@@ -10,9 +10,9 @@ tracker:
 
 
 agent:
-  model: sonnet
-  max_turns: 80
-  max_concurrency: 5
+  model: haiku
+  max_turns: 60
+  max_concurrency: 10
   permission_mode: bypassPermissions
   auth_method: subscription
 
