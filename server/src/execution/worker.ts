@@ -12,6 +12,7 @@ import type {
 import type { Config } from "../config/schema.ts";
 import type { TrackerClient } from "@harmonica/sensor-core";
 import { renderPrompt } from "../policy/prompt-renderer.ts";
+import { buildSystemPrompt } from "../policy/system-prompt.ts";
 import { logger } from "../observability/logger.ts";
 
 export interface WorkerOptions {
@@ -106,7 +107,9 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
               attempt: options.attemptNumber,
               workspace_dir: workspaceDir,
             };
-      prompt = await renderPrompt(workflow.promptTemplate, vars);
+      const rendered = await renderPrompt(workflow.promptTemplate, vars);
+      const systemPrompt = buildSystemPrompt(config, item);
+      prompt = systemPrompt ? `${systemPrompt}\n${rendered}` : rendered;
     } catch (err) {
       logger.error("prompt render failed", { item_id: item.id, error: String(err) });
       return makeResult("error", { error: `Prompt render failed: ${err}` });

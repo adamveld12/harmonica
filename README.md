@@ -369,6 +369,36 @@ agent:
     - Read
     - Edit
     - Bash
+  # system_prompt: ""  # omit = built-in pre-canned prompt; "" = disabled; non-empty = custom override
+```
+
+### System Prompt
+
+By default Harmonica prepends a **pre-canned system prompt** to the first turn of every agent session. It gives the agent reliable, consistent context regardless of which workflow is running:
+
+- How to call `task_complete` (via MCP) to signal completion and stop the worker
+- That the `gh` CLI is available for GitHub operations
+- What the workspace directory is and how to use it
+- Which sensor triggered the workflow and what filters/labels are active
+
+Control this per-workflow via `agent.system_prompt`:
+
+| Value | Behaviour |
+|-------|-----------|
+| *(omitted / not set)* | Use the built-in pre-canned system prompt **(default)** |
+| `""` (empty string) | Disable — no system prompt is prepended |
+| Any non-empty string | Use that string verbatim |
+
+```yaml
+# Disable the system prompt
+agent:
+  system_prompt: ""
+
+# Custom system prompt
+agent:
+  system_prompt: |
+    You are a specialist in fixing database migrations.
+    Always run tests before opening a pull request.
 ```
 
 ### Workspace Config
@@ -641,6 +671,7 @@ The continuation prompt sent on resume is: _"Continue working on the issue. Revi
 | `agent.auth_method`               | `"subscription" \| "api_key"` | `"subscription"`           | Auth mode                                                                                                                   |
 | `agent.api_key`                   | `string`                      | —                          | Anthropic API key (optional; only for `api_key` mode)                                                                       |
 | `agent.allowed_tools`             | `string[]`                    | —                          | Whitelist of tool names (all if omitted)                                                                                    |
+| `agent.system_prompt`             | `string`                      | *(pre-canned)*             | Prepended to the first-turn prompt; `""` disables; omit for built-in default                                               |
 | **workspace**                     |                               |                            |                                                                                                                             |
 | `workspace.repo_url`              | `string`                      | —                          | Repository URL (required; HTTPS or SSH)                                                                                     |
 | `workspace.cleanup_on_start`      | `boolean`                     | `true`                     | Remove stale workspaces at startup                                                                                          |
