@@ -67,6 +67,7 @@ Pull and run the image directly — no local Bun, `gh`, or `pnpm` installation n
 docker run --rm \
   -e LINEAR_API_KEY=lin_api_... \
   -e ANTHROPIC_API_KEY=sk-ant-... \
+  -v "$PWD/.agents/sensors.yaml:/data/.agents/sensors.yaml:ro" \
   -v "$PWD/.agents/workflows:/data/workflows" \
   ghcr.io/adamveld12/harmonica:latest
 ```
@@ -77,6 +78,7 @@ Mount `~/.claude` to use a Claude Pro/Max subscription instead of an API key:
 docker run --rm \
   -e LINEAR_API_KEY=lin_api_... \
   -v "$HOME/.claude:/home/harmonica/.claude:ro" \
+  -v "$PWD/.agents/sensors.yaml:/data/.agents/sensors.yaml:ro" \
   -v "$PWD/.agents/workflows:/data/workflows" \
   ghcr.io/adamveld12/harmonica:latest
 ```

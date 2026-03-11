@@ -50,7 +50,7 @@ RUN apk add --no-cache \
         ca-certificates \
         git \
         github-cli \
-    && bun install -g pnpm
+    && bun add --global pnpm
 
 # Create a non-root user
 RUN addgroup -S harmonica && adduser -S -G harmonica harmonica
@@ -71,6 +71,10 @@ ENV HOME=/home/harmonica
 
 # Expose the dashboard port (use --server.port at runtime or set HARM_SERVER_PORT)
 EXPOSE 6543
+
+# Health check — pings the dashboard if --server.port is set; exits 0 otherwise
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget -qO- http://localhost:${HARM_SERVER_PORT:-6543}/api/v1/workflows 2>/dev/null | grep -q '\[' || exit 0
 
 USER harmonica
 

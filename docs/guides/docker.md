@@ -26,11 +26,12 @@ docker pull ghcr.io/adamveld12/harmonica:0.2.0
 docker run --rm \
   -e LINEAR_API_KEY=lin_api_xxxxxxxxxxxxxxxxxxxx \
   -e ANTHROPIC_API_KEY=sk-ant-... \
-  -v "$PWD/.agents:/data/workflows" \
+  -v "$PWD/.agents/sensors.yaml:/data/.agents/sensors.yaml:ro" \
+  -v "$PWD/.agents/workflows:/data/workflows" \
   ghcr.io/adamveld12/harmonica:latest
 ```
 
-This mounts your local `.agents/` directory into the container as the workflow source and starts Harmonica.
+This mounts your local `.agents/sensors.yaml` and `.agents/workflows/` into the container and starts Harmonica.
 
 ## Persisting workspaces and the database
 
@@ -41,6 +42,7 @@ docker run --rm \
   -e LINEAR_API_KEY=lin_api_xxxxxxxxxxxxxxxxxxxx \
   -e ANTHROPIC_API_KEY=sk-ant-... \
   -v "$HOME/.harmonica:/data" \
+  -v "$PWD/.agents/sensors.yaml:/data/.agents/sensors.yaml:ro" \
   -v "$PWD/.agents/workflows:/data/workflows" \
   ghcr.io/adamveld12/harmonica:latest
 ```
@@ -57,6 +59,7 @@ Set `ANTHROPIC_API_KEY` as an environment variable:
 docker run --rm \
   -e LINEAR_API_KEY=lin_api_... \
   -e ANTHROPIC_API_KEY=sk-ant-... \
+  -v "$PWD/.agents/sensors.yaml:/data/.agents/sensors.yaml:ro" \
   -v "$PWD/.agents/workflows:/data/workflows" \
   ghcr.io/adamveld12/harmonica:latest
 ```
@@ -76,6 +79,7 @@ If you have a Claude Pro/Max subscription and have already run `claude login` on
 docker run --rm \
   -e LINEAR_API_KEY=lin_api_... \
   -v "$HOME/.claude:/home/harmonica/.claude:ro" \
+  -v "$PWD/.agents/sensors.yaml:/data/.agents/sensors.yaml:ro" \
   -v "$PWD/.agents/workflows:/data/workflows" \
   ghcr.io/adamveld12/harmonica:latest
 ```
@@ -98,6 +102,7 @@ docker run --rm \
   -e LINEAR_API_KEY=lin_api_... \
   -e ANTHROPIC_API_KEY=sk-ant-... \
   -p 6543:6543 \
+  -v "$PWD/.agents/sensors.yaml:/data/.agents/sensors.yaml:ro" \
   -v "$PWD/.agents/workflows:/data/workflows" \
   ghcr.io/adamveld12/harmonica:latest \
   --workflows /data/workflows \
@@ -120,11 +125,12 @@ Open `http://localhost:6543` in your browser.
 
 ## Volume mount reference
 
-| Mount path                 | Purpose                                              |
-| -------------------------- | ---------------------------------------------------- |
-| `/data`                    | Config dir: database + workspaces (persist this)     |
-| `/data/workflows`          | Workflow `.md` files (default `--workflows` path)    |
-| `/home/harmonica/.claude`  | Claude OAuth credentials (subscription auth)         |
+| Mount path                          | Purpose                                              |
+| ----------------------------------- | ---------------------------------------------------- |
+| `/data`                             | Config dir: database + workspaces (persist this)     |
+| `/data/.agents/sensors.yaml`        | Sensor definitions (required for workflow execution) |
+| `/data/workflows`                   | Workflow `.md` files (default `--workflows` path)    |
+| `/home/harmonica/.claude`           | Claude OAuth credentials (subscription auth)         |
 
 ## Docker Compose example
 
@@ -141,7 +147,8 @@ services:
       - "6543:6543"
     volumes:
       - harmonica-data:/data
-      - ./agents/workflows:/data/workflows:ro
+      - ./.agents/sensors.yaml:/data/.agents/sensors.yaml:ro
+      - ./.agents/workflows:/data/workflows:ro
     command:
       - --workflows
       - /data/workflows
@@ -170,6 +177,7 @@ docker run --rm \
   -e ANTHROPIC_API_KEY=sk-ant-... \
   -v "$HOME/.ssh/id_ed25519:/home/harmonica/.ssh/id_ed25519:ro" \
   -v "$HOME/.ssh/known_hosts:/home/harmonica/.ssh/known_hosts:ro" \
+  -v "$PWD/.agents/sensors.yaml:/data/.agents/sensors.yaml:ro" \
   -v "$PWD/.agents/workflows:/data/workflows" \
   ghcr.io/adamveld12/harmonica:latest
 ```
