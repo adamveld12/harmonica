@@ -3,9 +3,9 @@
 # ---- build stage ----
 FROM oven/bun:1-alpine AS builder
 
-# Install pnpm and Node (needed by vite/turbo for UI build)
+# Install Node.js (needed by Vite for UI build) and pnpm
 RUN apk add --no-cache nodejs npm \
-    && npm install -g pnpm turbo
+    && npm install -g pnpm
 
 WORKDIR /build
 
@@ -28,8 +28,15 @@ COPY cli/ cli/
 COPY sensors/ sensors/
 COPY tsconfig.json ./
 
-# Build everything (server + ui + cli assembly)
+# Build everything (server + ui + cli assembly via turbo)
 RUN pnpm run build
+
+# Use pnpm deploy to produce a self-contained, flat node_modules for the cli package
+# This resolves pnpm's virtual store symlinks into a real, portable node_modules tree
+RUN pnpm deploy --filter=@vdhsn/harmonica --prod /deploy
+
+# Copy the built dist into the deploy directory so everything is in one place
+RUN cp -r /build/cli/dist /deploy/dist
 
 # ---- runtime stage ----
 FROM oven/bun:1-alpine AS runtime
@@ -51,10 +58,8 @@ RUN addgroup -S harmonica && adduser -S -G harmonica harmonica
 # App lives here
 WORKDIR /app
 
-# Copy the assembled CLI distribution (server/dist + ui/dist)
-COPY --from=builder /build/cli/dist/ ./dist/
-# Runtime externals that bun build left unbundled (liquidjs, yaml, zod, claude-agent-sdk)
-COPY --from=builder /build/node_modules/ ./node_modules/
+# Copy the self-contained deployment (flat node_modules + dist + package.json)
+COPY --from=builder /deploy/ ./
 
 # Data directory — mount a volume here to persist DB and workspaces
 ENV HARM_CONFIG_DIR=/data
