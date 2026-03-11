@@ -10,6 +10,9 @@ async function runHook(hookCommand: string, ctx: HookContext, timeoutMs: number)
     workspace_dir: ctx.workspaceDir,
     attempt: ctx.attempt,
     repo_url: ctx.repoUrl ?? "",
+    repo_name: ctx.repoName ?? null,
+    repo_default_branch: ctx.repoDefaultBranch ?? null,
+    branch_name: ctx.branchName ?? null,
   };
 
   if (ctx.workItem) {

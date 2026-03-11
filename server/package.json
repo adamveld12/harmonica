@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "bun build src/index.ts --target bun --splitting --outdir dist --format esm --external @anthropic-ai/claude-agent-sdk --external liquidjs --external yaml --external zod",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.69",

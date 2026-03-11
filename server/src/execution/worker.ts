@@ -30,6 +30,11 @@ export interface WorkerOptions {
   onPrUrl: (itemId: string, url: string) => void;
   mcpServers?: McpServerFactory;
   abortController: AbortController;
+  // Repo management variables (populated when workspace.repo is set)
+  repoName?: string | null;
+  repoUrl?: string | null;
+  repoDefaultBranch?: string | null;
+  branchName?: string | null;
 }
 
 function emptyUsage(): TokenUsage {
@@ -90,6 +95,12 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
   try {
     let prompt: string;
     try {
+      const repoVars = {
+        repo_name: options.repoName ?? null,
+        repo_url: options.repoUrl ?? null,
+        repo_default_branch: options.repoDefaultBranch ?? null,
+        branch_name: options.branchName ?? null,
+      };
       const vars =
         item.kind === "issue"
           ? {
@@ -98,6 +109,7 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
               item,
               attempt: options.attemptNumber,
               workspace_dir: workspaceDir,
+              ...repoVars,
             }
           : {
               issue: null,
@@ -105,6 +117,7 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
               item,
               attempt: options.attemptNumber,
               workspace_dir: workspaceDir,
+              ...repoVars,
             };
       prompt = await renderPrompt(workflow.promptTemplate, vars);
     } catch (err) {

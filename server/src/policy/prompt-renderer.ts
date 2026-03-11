@@ -10,5 +10,9 @@ export async function renderPrompt(template: string, vars: PromptVariables): Pro
     item: vars.item,
     attempt: vars.attempt,
     workspace_dir: vars.workspace_dir,
+    repo_name: vars.repo_name ?? null,
+    repo_url: vars.repo_url ?? null,
+    repo_default_branch: vars.repo_default_branch ?? null,
+    branch_name: vars.branch_name ?? null,
   });
 }
