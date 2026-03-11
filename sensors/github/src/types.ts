@@ -198,6 +198,9 @@ export function matchesGitHubPRFilters(node: GitHubPRNode, config: TrackerConfig
 
 export function matchesGitHubProjectItemFilters(node: GitHubProjectItemNode, config: TrackerConfig): boolean {
   if (config.filter_assignees?.length) {
+    const assigneeLogins = node.assignees.map((a) => a.login.toLowerCase());
+    if (!config.filter_assignees.some((fa) => assigneeLogins.includes(fa.toLowerCase()))) return false;
+  }
     const assigneeLogins = node.assignees.map((a) => a.login);
     if (!config.filter_assignees.some((fa) => assigneeLogins.includes(fa))) return false;
   }
