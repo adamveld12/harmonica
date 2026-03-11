@@ -37,6 +37,40 @@ export async function ghApi<T>(path: string, token?: string): Promise<T> {
 }
 
 /**
+ * Execute a GraphQL query via `gh api graphql --input -` (reads JSON from stdin).
+ * Returns the `data` field of the response, or throws on errors.
+ */
+export async function ghApiGraphQL<T>(query: string, variables: Record<string, unknown>, token?: string): Promise<T> {
+  const env: Record<string, string> = { ...process.env } as Record<string, string>;
+  if (token) env.GH_TOKEN = token;
+
+  const payload = JSON.stringify({ query, variables });
+
+  const proc = Bun.spawn(["gh", "api", "graphql", "--input", "-"], {
+    env,
+    stdin: new Blob([payload]),
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+
+  if (exitCode !== 0) {
+    throw new Error(`gh api graphql failed (${exitCode}): ${stderr.trim()}`);
+  }
+
+  const response = JSON.parse(stdout) as { data: T; errors?: Array<{ message: string }> };
+  if (response.errors?.length) {
+    throw new Error(`GraphQL errors: ${response.errors.map((e) => e.message).join(", ")}`);
+  }
+  return response.data;
+}
+
+/**
  * Call `gh api --paginate --jq '.[]' <path>` and return all items.
  * Each page's array is flattened into a single list.
  */
@@ -138,6 +172,90 @@ interface GhProjectItemsOutput {
   }>;
 }
 
+// GraphQL query to fetch project item assignees for both org and user owners.
+const PROJECT_ITEM_ASSIGNEES_QUERY = `
+  query GetProjectItemAssignees($owner: String!, $number: Int!, $cursor: String) {
+    repositoryOwner(login: $owner) {
+      ... on Organization {
+        projectV2(number: $number) { ...ProjectItems }
+      }
+      ... on User {
+        projectV2(number: $number) { ...ProjectItems }
+      }
+    }
+  }
+  fragment ProjectItems on ProjectV2 {
+    items(first: 100, after: $cursor) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        id
+        content {
+          ... on Issue { assignees(first: 10) { nodes { login } } }
+          ... on PullRequest { assignees(first: 10) { nodes { login } } }
+        }
+      }
+    }
+  }
+`;
+
+interface ProjectItemAssigneesResponse {
+  repositoryOwner: {
+    projectV2?: {
+      items: {
+        pageInfo: { hasNextPage: boolean; endCursor: string | null };
+        nodes: Array<{
+          id: string;
+          content: { assignees?: { nodes: Array<{ login: string }> } } | null;
+        }>;
+      };
+    } | null;
+  } | null;
+}
+
+/**
+ * Fetch a map of project item ID → assignee logins via GraphQL.
+ * Handles pagination. Gracefully returns an empty map on error so that
+ * `fetchProjectItems` can still return items without assignee data.
+ */
+async function fetchProjectItemAssignees(
+  owner: string,
+  projectNumber: number,
+  token?: string,
+): Promise<Map<string, Array<{ login: string }>>> {
+  const result = new Map<string, Array<{ login: string }>>();
+  let cursor: string | null = null;
+
+  try {
+    do {
+      const data: ProjectItemAssigneesResponse = await ghApiGraphQL<ProjectItemAssigneesResponse>(
+        PROJECT_ITEM_ASSIGNEES_QUERY,
+        { owner, number: projectNumber, cursor },
+        token,
+      );
+
+      const items: ProjectItemAssigneesResponse["repositoryOwner"] extends null | undefined
+        ? never
+        : NonNullable<NonNullable<ProjectItemAssigneesResponse["repositoryOwner"]>["projectV2"]>["items"] | undefined =
+        data.repositoryOwner?.projectV2?.items;
+      if (!items) break;
+
+      for (const node of items.nodes) {
+        result.set(node.id, node.content?.assignees?.nodes ?? []);
+      }
+
+      cursor = items.pageInfo.hasNextPage ? items.pageInfo.endCursor : null;
+    } while (cursor !== null);
+  } catch (err) {
+    logger.warn("github fetch project item assignees failed, continuing without assignee data", {
+      owner,
+      projectNumber,
+      error: String(err),
+    });
+  }
+
+  return result;
+}
+
 export async function fetchProjectItems(
   owner: string,
   projectNumber: number,
@@ -150,6 +268,10 @@ export async function fetchProjectItems(
       token,
     );
     const data = JSON.parse(output) as GhProjectItemsOutput;
+
+    // Fetch assignees via GraphQL and merge into items
+    const assigneeMap = await fetchProjectItemAssignees(owner, projectNumber, token);
+
     const items: GitHubProjectItemNode[] = data.items.map((item) => ({
       id: item.id,
       title: item.title,
@@ -158,6 +280,7 @@ export async function fetchProjectItems(
       url: item.url,
       created_at: item.createdAt,
       updated_at: item.updatedAt,
+      assignees: assigneeMap.get(item.id) ?? [],
     }));
     logger.info("github project items fetched", { owner, projectNumber, total: items.length });
     return items;

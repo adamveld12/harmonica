@@ -49,6 +49,9 @@ gh-issues:
   repo: widget
   mode: issues
   poll_interval_s: 30
+  assignees:
+    - "alice"
+    - "bob"
 
 # Watch open pull requests
 gh-prs:
@@ -141,7 +144,40 @@ harmonica --workflows .agents/workflows/
 
 ## Filtering
 
-You can narrow which items the sensor dispatches:
+You can narrow which items the sensor dispatches.
+
+### Sensor-level assignee filtering
+
+Set `assignees` on the sensor to apply a default assignee filter for all workflows using that sensor. Values must be GitHub login usernames (not display names):
+
+```yaml
+# .agents/sensors.yaml
+gh-issues:
+  type: github
+  owner: acme
+  repo: widget
+  mode: issues
+  poll_interval_s: 30
+  assignees:
+    - "alice"
+    - "bob"
+```
+
+This propagates as the default `filter_assignees` for every workflow that references `gh-issues`.
+
+### Workflow-level override
+
+A workflow can override the sensor's `assignees` with its own `filter_assignees`:
+
+```yaml
+tracker:
+  type: github
+  sensor: gh-issues
+  filter_assignees:
+    - "carol" # overrides sensor-level assignees for this workflow only
+```
+
+### Other tracker filters
 
 ```yaml
 tracker:
