@@ -28,6 +28,7 @@ coverage
 .nyc_output
 
 # temp / cache
+node_modules
 node_modules/.cache
 .turbo
 .husky
