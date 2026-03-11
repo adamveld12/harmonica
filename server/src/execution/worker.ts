@@ -109,10 +109,9 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
             };
       const rendered = await renderPrompt(workflow.promptTemplate, vars);
       const systemPrompt = buildSystemPrompt(config, item);
-      const rendered = await renderPrompt(workflow.promptTemplate, vars);
-      const systemPrompt = buildSystemPrompt(config, item);
-      // Concatenated into user prompt — the Agent SDK does not support a separate
-      // system prompt parameter that persists across session resumption.
+      // Concatenated into user prompt — the Agent SDK does not support a dedicated
+      // systemPrompt parameter that persists across session resumption. Prepending
+      // to the first user turn is the only reliable way to carry the context forward.
       prompt = systemPrompt ? `${systemPrompt}\n${rendered}` : rendered;
     } catch (err) {
       logger.error("prompt render failed", { item_id: item.id, error: String(err) });

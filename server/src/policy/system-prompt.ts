@@ -76,7 +76,7 @@ You are working on ${itemKind} **${item.identifier}**: ${item.title}
 
 ## Workspace
 
-Your workspace is an isolated directory on the local filesystem created specifically for this work item. It contains a checkout of the repository. All changes you make should be committed and pushed to a feature branch. Do not modify files outside the workspace directory.
+Your workspace is an isolated directory on the local filesystem created specifically for this work item. It contains a checkout of the repository (which may include uncommitted changes from a previous attempt if this is a retry). All changes you make should be committed and pushed to a feature branch. Do not modify files outside the workspace directory.
 
 ## Available Tools
 
