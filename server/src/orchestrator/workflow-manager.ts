@@ -14,6 +14,7 @@ import type { WorkflowConfig, WorkflowId, NotificationEvent, StateSnapshot, Comp
 import type { Config } from "../config/schema.ts";
 import type { HarmonicaDB } from "../observability/db.ts";
 import type { SensorManager } from "../integration/sensor-manager.ts";
+import type { RepoManager } from "../integration/repo-manager.ts";
 
 export interface WorkflowInstance {
   id: WorkflowId;
@@ -37,6 +38,7 @@ export class WorkflowManager {
     private db?: HarmonicaDB,
     private sensorManager?: SensorManager,
     private repoUrlOverride?: string,
+    private repoManager?: RepoManager,
   ) {}
 
   getWorkspacesDir(): string {
@@ -155,7 +157,7 @@ export class WorkflowManager {
     });
 
     const state = createState();
-    const orchestrator = new Orchestrator(config, tracker, runner, workspaceManager, workflow, state, this.db, id);
+    const orchestrator = new Orchestrator(config, tracker, runner, workspaceManager, workflow, state, this.db, id, this.repoManager);
 
     if (this.notifyHandler) {
       const handler = this.notifyHandler;

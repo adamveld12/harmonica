@@ -4,6 +4,18 @@ export type { TrackerConfig, SensorsFileConfig } from "@harmonica/sensor-core";
 
 export { _TrackerSchema as TrackerSchema, _SensorsFileSchema as SensorsFileSchema };
 
+export const RepoSchema = z.object({
+  url: z.string(),
+  default_branch: z.string().default("main"),
+  fetch_depth: z.number().optional(),
+  fetch_interval_ms: z.number().optional(),
+});
+
+export const ReposFileSchema = z.record(z.string(), RepoSchema);
+
+export type RepoConfig = z.infer<typeof RepoSchema>;
+export type ReposFileConfig = z.infer<typeof ReposFileSchema>;
+
 export const AgentSchema = z
   .object({
     model: z.string().default("claude-sonnet-4-20250514"),
@@ -29,8 +41,13 @@ export const AgentSchema = z
 export const WorkspaceSchema = z
   .object({
     repo_url: z.string().optional(),
+    repo: z.string().optional(),
     cleanup_on_start: z.boolean().default(true),
     cleanup_on_terminal: z.boolean().default(true),
+  })
+  .refine((v) => !(v.repo && v.repo_url), {
+    message: "workspace.repo and workspace.repo_url are mutually exclusive",
+    path: ["repo"],
   })
   .default({
     cleanup_on_start: true,

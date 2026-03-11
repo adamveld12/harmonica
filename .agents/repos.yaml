@@ -1,0 +1,18 @@
+# Named repository definitions for Harmonica's native git management.
+# Harmonica will maintain a bare clone of each repo under $HARM_CONFIG_DIR/repos/
+# and provision an isolated git worktree per work item instead of a full clone.
+#
+# Reference a repo in a workflow file with:
+#   workspace:
+#     repo: my-repo
+#
+# Fields:
+#   url             (required) HTTPS or SSH remote URL
+#   default_branch  (optional, default: "main") base branch for new worktrees
+#   fetch_depth     (optional) shallow clone depth
+#   fetch_interval_ms (optional) future: automatic background fetch interval
+
+# Example — uncomment and fill in your repo details:
+# my-repo:
+#   url: git@github.com:org/my-repo.git
+#   default_branch: main

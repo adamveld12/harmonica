@@ -200,6 +200,11 @@ export interface PromptVariables {
   item: WorkItem; // always populated (generic access)
   attempt: number;
   workspace_dir: string;
+  // Repo management variables (populated when workspace.repo is set)
+  repo_name: string | null;
+  repo_url: string | null;
+  repo_default_branch: string | null;
+  branch_name: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -214,6 +219,9 @@ export interface HookContext {
   workspaceDir: string;
   sessionId?: string | null;
   repoUrl?: string;
+  repoName?: string | null;
+  repoDefaultBranch?: string | null;
+  branchName?: string | null;
   workItem: WorkItem;
   attempt: number;
 }

@@ -6,7 +6,9 @@ import { startDashboardServer, type GlobalSettings } from "./observability/serve
 import { HarmonicaDB } from "./observability/db.ts";
 import { logger } from "./observability/logger.ts";
 import { loadSensors, watchSensors } from "./config/sensor-loader.ts";
+import { loadRepos, watchRepos } from "./config/repo-loader.ts";
 import { SensorManager } from "./integration/sensor-manager.ts";
+import { createRepoManager } from "./integration/repo-manager.ts";
 import * as linearMod from "@harmonica/sensor-linear";
 import * as githubMod from "@harmonica/sensor-github";
 import { expandHome } from "./config/resolver.ts";
@@ -160,7 +162,20 @@ async function main() {
       .catch((err) => logger.error("sensor config update failed", { error: String(err) }));
   });
 
-  const manager = new WorkflowManager(workspacesDir, db, sensorManager, args.workspaceRepoUrl);
+  const reposConfig = await loadRepos(process.cwd());
+  const repoManager = createRepoManager(configDir, reposConfig);
+  if (Object.keys(reposConfig).length > 0) {
+    await repoManager.start();
+    logger.info("repo manager started", { repos: Object.keys(reposConfig) });
+  }
+
+  const stopRepoWatcher = watchRepos(process.cwd(), (newConfig) => {
+    repoManager
+      .updateConfig(newConfig)
+      .catch((err) => logger.error("repo config update failed", { error: String(err) }));
+  });
+
+  const manager = new WorkflowManager(workspacesDir, db, sensorManager, args.workspaceRepoUrl, repoManager);
 
   // Load workflows from directory
   let stat;
@@ -222,6 +237,7 @@ async function main() {
     server?.stop();
     await manager.shutdownAll();
     stopSensorWatcher();
+    stopRepoWatcher();
     sensorManager.stopAll();
     db?.close();
     process.exit(0);
