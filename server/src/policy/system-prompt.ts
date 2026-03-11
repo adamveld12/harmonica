@@ -44,9 +44,9 @@ function buildDefaultSystemPrompt(config: Config, item: WorkItem): string {
   }
   if (tracker.filter_milestone) {
     sensorLines.push(`- Filtered to milestone: ${tracker.filter_milestone}`);
-  if (tracker.filter_milestone) {
-    sensorLines.push(`- Filtered to milestone: ${tracker.filter_milestone}`);
   }
+  // GitHub-specific filters: filter_base_branch and filter_draft are only set
+  // for github-type trackers but are surfaced here for agent awareness regardless.
   if (tracker.filter_base_branch) {
     sensorLines.push(`- Filtered to base branch: ${tracker.filter_base_branch}`);
   }
@@ -60,6 +60,8 @@ function buildDefaultSystemPrompt(config: Config, item: WorkItem): string {
     sensorLines.push(`- Terminal states: ${tracker.terminal_states.join(", ")}`);
   }
 
+  // WorkItem.kind is "issue" | "project". The "pull_requests" tracker mode maps
+  // items to kind "issue" (PRs are represented as issues in the work-item model).
   const itemKind = item.kind === "project" ? "project" : "issue";
 
   return `# Harmonica Agent Context
@@ -89,6 +91,7 @@ Use this as soon as the work item is done — do not continue looping after the 
 
 ### GitHub CLI (gh)
 The \`gh\` CLI is available in your workspace for interacting with GitHub: creating pull requests, viewing issues, checking CI status, etc.
+Note: \`gh\` is only available when the workspace uses a GitHub-hosted repository. Non-GitHub repos or custom container images may not have \`gh\` installed.
 
 Common usage:
 \`\`\`bash
