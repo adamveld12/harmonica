@@ -59,7 +59,9 @@ export function createGitHubProjectsBackend(
     },
     async fetchOne(id) {
       if (projectNumber === null) return null;
-      const items = await fetchProjectItems(owner, projectNumber, token, resolveAssignees);
+      // Fetch without assignees — fetchOne is only used to refresh item state,
+      // not to re-run assignee filters, so the GraphQL call is unnecessary here.
+      const items = await fetchProjectItems(owner, projectNumber, token, false);
       return items.find((item) => item.id === id) ?? null;
     },
   };
